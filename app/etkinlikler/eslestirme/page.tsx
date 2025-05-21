@@ -11,6 +11,11 @@ const supabase = createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
 );
 
+// Bileşen dışına alınan yardımcı fonksiyon
+const shuffleArray = <T,>(array: T[]): T[] => {
+    return [...array].sort(() => Math.random() - 0.5);
+};
+
 type ZorlukSecim = 1 | 2 | 3 | 4 | 5 | 'karisik';
 
 type EslesmeTipi = {
@@ -18,6 +23,13 @@ type EslesmeTipi = {
     eski: string;
     yeni: string;
     zorluk: number;
+};
+
+type WordRelationDB = {
+    id: number;
+    difficulty: number;
+    old_words: { text: string }[];
+    new_words: { text: string }[];
 };
 
 export default function EslestirmeSinav() {
@@ -41,48 +53,64 @@ export default function EslestirmeSinav() {
     const [kullanilanIdler, setKullanilanIdler] = useState<number[]>([]);
 
     const [geciciKirmizi, setGeciciKirmizi] = useState<string[]>([]);
-    const timerRef = useRef<number>(0);
+    const timerRef = useRef<number | null>(null);
 
     const fetchEslesmeler = async () => {
-        const { data } = await supabase
+        const { data, error } = await supabase
             .from('word_relations')
-            .select(`id, difficulty, old_words(text), new_words(text)`);
+            .select(`
+        id, 
+        difficulty, 
+        old_words!old_word_id(text),
+        new_words!new_word_id(text)
+      `);
+
+        if (error) {
+            console.error('Supabase error:', error);
+            return;
+        }
 
         if (!data) return;
 
-        const filtrelenmis = data
-            .filter((d: any) => zorluk === 'karisik' || d.difficulty === zorluk)
-            .map((d: any) => ({
-                id: d.id,
-                eski: d.old_words.text,
-                yeni: d.new_words.text,
-                zorluk: d.difficulty,
-            }));
+        const filtrelenmis: EslesmeTipi[] = data
+            .filter((d: WordRelationDB) => zorluk === 'karisik' || d.difficulty === zorluk)
+            .map((d: WordRelationDB) => {
+                const eskiKelime = d.old_words[0]?.text || '';
+                const yeniKelime = d.new_words[0]?.text || '';
+
+                return {
+                    id: d.id,
+                    eski: eskiKelime,
+                    yeni: yeniKelime,
+                    zorluk: d.difficulty,
+                };
+            })
+            .filter(item => item.eski && item.yeni); // Boş verileri filtrele
 
         setEslesmeler(filtrelenmis);
     };
 
-    const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
-
     const yeniSetOlustur = () => {
         const uygunEslesmeler = eslesmeler.filter(e => !kullanilanIdler.includes(e.id));
-        const secilenler = shuffle(uygunEslesmeler).slice(0, 5);
+        const secilenler = shuffleArray(uygunEslesmeler).slice(0, 5);
 
         if (secilenler.length === 0) {
-            // Yeni kelime kalmadıysa sınavı bitir
-            clearInterval(timerRef.current!);
+            if (timerRef.current) clearInterval(timerRef.current);
             setBasladi(false);
             setBitti(true);
             return;
         }
 
-        setKullanilanIdler((prev) => [...prev, ...secilenler.map((e) => e.id)]);
+        // Tüm state güncellemeleri tek seferde
         setMevcutSet(secilenler);
         setDogruEslesmeler([]);
         setAktifSecim(null);
-        setTur((t) => t + 1);
-        setEskiList(shuffle(secilenler));
-        setYeniList(shuffle(secilenler));
+        setTur(t => t + 1);
+        setKullanilanIdler(prev => [...prev, ...secilenler.map(e => e.id)]);
+
+        const karistirilmis = shuffleArray(secilenler);
+        setEskiList(karistirilmis);
+        setYeniList(shuffleArray(karistirilmis));
     };
 
     const baslat = async () => {
@@ -100,9 +128,16 @@ export default function EslestirmeSinav() {
 
     useEffect(() => {
         if (!basladi) return;
-        yeniSetOlustur();
+
+        // Veriler yüklendikten sonra set oluştur
+        const init = async () => {
+            await fetchEslesmeler();
+            yeniSetOlustur();
+        };
+        init();
+
         timerRef.current = window.setInterval(() => {
-            setSure((prev) => {
+            setSure(prev => {
                 if (prev <= 1) {
                     clearInterval(timerRef.current!);
                     setBasladi(false);
@@ -112,6 +147,7 @@ export default function EslestirmeSinav() {
                 return prev - 1;
             });
         }, 1000);
+
         return () => clearInterval(timerRef.current!);
     }, [basladi]);
 
@@ -129,22 +165,19 @@ export default function EslestirmeSinav() {
         const sec2 = { kelime, tip };
 
         const dogru = mevcutSet.find(
-            (m) =>
-                (m.eski === sec1.kelime && m.yeni === sec2.kelime) ||
+            m => (m.eski === sec1.kelime && m.yeni === sec2.kelime) ||
                 (m.yeni === sec1.kelime && m.eski === sec2.kelime)
         );
 
         if (dogru && !dogruEslesmeler.includes(dogru.id)) {
-            setDogruEslesmeler((p) => [...p, dogru.id]);
-            setDogruSayisi((d) => d + 1);
-            setPuan((p) => p + dogru.zorluk * 2);
-            setSure((s) => s + 0.5);
+            setDogruEslesmeler(p => [...p, dogru.id]);
+            setDogruSayisi(d => d + 1);
+            setPuan(p => p + dogru.zorluk * 2);
+            setSure(s => s + 0.5);
         } else {
-            setYanlisSayisi((y) => y + 1);
+            setYanlisSayisi(y => y + 1);
             setGeciciKirmizi([sec1.kelime, sec2.kelime]);
-            setTimeout(() => {
-                setGeciciKirmizi([]);
-            }, 1000);
+            setTimeout(() => setGeciciKirmizi([]), 1000);
         }
 
         setAktifSecim(null);
@@ -152,7 +185,7 @@ export default function EslestirmeSinav() {
 
     const cikisOnayi = () => {
         if (confirm('Sınavı bitirmek istiyor musunuz?')) {
-            clearInterval(timerRef.current!);
+            if (timerRef.current) clearInterval(timerRef.current);
             setBasladi(false);
             setBitti(true);
         }
@@ -164,13 +197,13 @@ export default function EslestirmeSinav() {
         if (!basladi) return;
         const kalan = eslesmeler.filter(e => !kullanilanIdler.includes(e.id));
         if (kalan.length === 0 && tumEslesmelerDogru) {
-            clearInterval(timerRef.current!);
+            if (timerRef.current) clearInterval(timerRef.current);
             setTimeout(() => {
                 setBasladi(false);
                 setBitti(true);
             }, 500);
         }
-    }, [tumEslesmelerDogru]);
+    }, [tumEslesmelerDogru, basladi, eslesmeler, kullanilanIdler]);
 
     if (bitti) {
         puanGuncelle(puan);
@@ -201,7 +234,7 @@ export default function EslestirmeSinav() {
                     <div>
                         <p className="font-semibold mb-2">Zorluk:</p>
                         <div className="grid grid-cols-2 gap-3">
-                            {(['karisik', 1, 2, 3, 4, 5] as ZorlukSecim[]).map((z) => (
+                            {(['karisik', 1, 2, 3, 4, 5] as ZorlukSecim[]).map(z => (
                                 <motion.button
                                     key={z}
                                     whileHover={{ scale: 1.03 }}
@@ -246,10 +279,10 @@ export default function EslestirmeSinav() {
                                 whileHover={{ scale: 1.03 }}
                                 onClick={() => tikla(k.eski, 'eski')}
                                 className={`w-full p-3 rounded-lg transition-colors duration-300 exam-card2
-                                    ${aktifSecim?.kelime === k.eski ? 'chosen-exam-card' : ''}
-                                    ${dogruEslesmeler.includes(k.id) ? 'right-option-card' : ''}
-                                    ${geciciKirmizi.includes(k.eski) ? 'wrong-option-card' : ''}
-                                `}
+                  ${aktifSecim?.kelime === k.eski ? 'chosen-exam-card' : ''}
+                  ${dogruEslesmeler.includes(k.id) ? 'right-option-card' : ''}
+                  ${geciciKirmizi.includes(k.eski) ? 'wrong-option-card' : ''}
+                `}
                             >
                                 {k.eski}
                             </motion.button>
@@ -262,10 +295,10 @@ export default function EslestirmeSinav() {
                                 whileHover={{ scale: 1.03 }}
                                 onClick={() => tikla(k.yeni, 'yeni')}
                                 className={`w-full p-3 rounded-lg transition-colors duration-300 exam-card2
-                                    ${aktifSecim?.kelime === k.yeni ? 'chosen-exam-card' : ''}
-                                    ${dogruEslesmeler.includes(k.id) ? 'right-option-card' : ''}
-                                    ${geciciKirmizi.includes(k.yeni) ? 'wrong-option-card' : ''}
-                                `}
+                  ${aktifSecim?.kelime === k.yeni ? 'chosen-exam-card' : ''}
+                  ${dogruEslesmeler.includes(k.id) ? 'right-option-card' : ''}
+                  ${geciciKirmizi.includes(k.yeni) ? 'wrong-option-card' : ''}
+                `}
                             >
                                 {k.yeni}
                             </motion.button>

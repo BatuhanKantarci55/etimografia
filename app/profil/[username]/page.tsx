@@ -1,11 +1,9 @@
 import ClientProfilePage from './ClientProfilePage'
 
-export async function generateStaticParams() {
-    return []
+interface ProfilePageProps {
+    params: { username: string }
 }
 
-// Burada dikkat et! params: Promise<{ username: string }>
-export default async function Page({ params }: { params: Promise<{ username: string }> }) {
-    const resolvedParams = await params
-    return <ClientProfilePage username={resolvedParams.username} />
+export default async function Page({ params }: ProfilePageProps) {
+    return <ClientProfilePage username={params.username} />
 }

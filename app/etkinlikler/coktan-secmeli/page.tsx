@@ -32,7 +32,6 @@ export default function SecimliSinav() {
     const [indeks, setIndeks] = useState(0);
     const [cevap, setCevap] = useState<string | null>(null);
     const [sonuc, setSonuc] = useState<'dogru' | 'yanlis' | null>(null);
-    const [isChecked, setIsChecked] = useState(false);
     const [streak, setStreak] = useState(0);
 
     const [sure, setSure] = useState(60);
@@ -43,7 +42,6 @@ export default function SecimliSinav() {
     const [comboAktif, setComboAktif] = useState(false);
 
     const timerRef = useRef<number>(0);
-    const inputRef = useRef<HTMLInputElement>(null);
 
     const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
@@ -104,7 +102,6 @@ export default function SecimliSinav() {
         setSonuc(null);
         setCevap(null);
         setStreak(0);
-        setIsChecked(false);
     };
 
     useEffect(() => {
@@ -358,6 +355,17 @@ export default function SecimliSinav() {
                         </motion.button>
                     ))}
                 </div>
+
+                {/* PAS BUTONU */}
+                {cevap === null && indeks + 1 < sorular.length && (
+                    <motion.button
+                        whileHover={{ scale: 1.03 }}
+                        onClick={pasGec}
+                        className="w-full p-3 border rounded-full button"
+                    >
+                        Pas Geç
+                    </motion.button>
+                )}
 
                 {cevap && indeks + 1 < sorular.length && (
                     <motion.button

@@ -18,7 +18,7 @@ const etkinlikler = [
         icon: <AdjustmentsHorizontalIcon className="h-8 w-8 text-indigo-500" />,
     },
     {
-        title: 'Eşleştirme',
+        title: 'Eşleştirme (YAKINDA)',
         description: 'Kelime eşleştirme oyunu.',
         href: '/etkinlikler/eslestirme',
         icon: <PuzzlePieceIcon className="h-8 w-8 text-indigo-500" />,

@@ -22,12 +22,6 @@ type SoruTipi = {
     zorluk: number;
 };
 
-type WordRelationResponse = {
-    difficulty: number;
-    old_words: { text: string }[]; // Dizi olarak düzeltildi
-    new_words: { text: string }[]; // Dizi olarak düzeltildi
-};
-
 export default function SecimliSinav() {
     const [yon, setYon] = useState<Yon>('eski');
     const [zorluk, setZorluk] = useState<ZorlukSecim>('karisik');

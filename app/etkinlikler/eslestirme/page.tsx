@@ -56,38 +56,35 @@ export default function EslestirmeSinav() {
     const timerRef = useRef<number | null>(null);
 
     const fetchEslesmeler = async () => {
-        const { data, error } = await supabase
-            .from('word_relations')
-            .select(`
+        try {
+            const { data, error } = await supabase
+                .from('word_relations')
+                .select(`
         id, 
         difficulty, 
         old_words!old_word_id(text),
         new_words!new_word_id(text)
       `);
 
-        if (error) {
-            console.error('Supabase error:', error);
-            return;
-        }
+            if (error) throw error;
+            if (!data) throw new Error('Veri alınamadı');
 
-        if (!data) return;
-
-        const filtrelenmis: EslesmeTipi[] = data
-            .filter((d: WordRelationDB) => zorluk === 'karisik' || d.difficulty === zorluk)
-            .map((d: WordRelationDB) => {
-                const eskiKelime = d.old_words[0]?.text || '';
-                const yeniKelime = d.new_words[0]?.text || '';
-
-                return {
+            const filtrelenmis: EslesmeTipi[] = data
+                .filter((d: WordRelationDB) => zorluk === 'karisik' || d.difficulty === zorluk)
+                .map((d: WordRelationDB) => ({
                     id: d.id,
-                    eski: eskiKelime,
-                    yeni: yeniKelime,
+                    eski: d.old_words[0]?.text || '',
+                    yeni: d.new_words[0]?.text || '',
                     zorluk: d.difficulty,
-                };
-            })
-            .filter(item => item.eski && item.yeni); // Boş verileri filtrele
+                }))
+                .filter(item => item.eski && item.yeni);
 
-        setEslesmeler(filtrelenmis);
+            setEslesmeler(filtrelenmis);
+            return true;
+        } catch (error) {
+            console.error('Veri çekme hatası:', error);
+            return false;
+        }
     };
 
     const yeniSetOlustur = () => {
@@ -114,7 +111,6 @@ export default function EslestirmeSinav() {
     };
 
     const baslat = async () => {
-        await fetchEslesmeler();
         setBasladi(true);
         setBitti(false);
         setSure(60);
@@ -124,31 +120,53 @@ export default function EslestirmeSinav() {
         setYanlisSayisi(0);
         setGeciciKirmizi([]);
         setKullanilanIdler([]);
+
+        // Verileri yüklemeyi useEffect'e bırakıyoruz
     };
 
     useEffect(() => {
         if (!basladi) return;
 
-        // Veriler yüklendikten sonra set oluştur
+        let isMounted = true;
+        let timer: number | null = null;
+
         const init = async () => {
-            await fetchEslesmeler();
-            yeniSetOlustur();
+            try {
+                await fetchEslesmeler();
+
+                if (isMounted) {
+                    yeniSetOlustur();
+
+                    timer = window.setInterval(() => {
+                        if (isMounted) {
+                            setSure(prev => {
+                                if (prev <= 1) {
+                                    if (timer) clearInterval(timer);
+                                    setBasladi(false);
+                                    setBitti(true);
+                                    return 0;
+                                }
+                                return prev - 1;
+                            });
+                        }
+                    }, 1000);
+
+                    timerRef.current = timer;
+                }
+            } catch (error) {
+                console.error('Başlatma hatası:', error);
+                if (isMounted) {
+                    setBasladi(false);
+                }
+            }
         };
+
         init();
 
-        timerRef.current = window.setInterval(() => {
-            setSure(prev => {
-                if (prev <= 1) {
-                    clearInterval(timerRef.current!);
-                    setBasladi(false);
-                    setBitti(true);
-                    return 0;
-                }
-                return prev - 1;
-            });
-        }, 1000);
-
-        return () => clearInterval(timerRef.current!);
+        return () => {
+            isMounted = false;
+            if (timer) clearInterval(timer);
+        };
     }, [basladi]);
 
     const tikla = (kelime: string, tip: 'eski' | 'yeni') => {

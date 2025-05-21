@@ -12,18 +12,6 @@ type Kelime = {
     kokYeni: string;
 };
 
-// Önce tipleri güncelleyelim
-type SupabaseWord = {
-    text: string;
-    origin: string;
-};
-
-type SupabaseWordRelation = {
-    difficulty: number;
-    old_words: SupabaseWord; // Dizi değil, doğrudan nesne
-    new_words: SupabaseWord; // Dizi değil, doğrudan nesne
-};
-
 const getKokClass = (kok: string) => {
     switch (kok?.toLowerCase()) {
         case 'arapça':
@@ -52,18 +40,6 @@ export default function Liste() {
     const [sortField, setSortField] = useState<'eski' | 'yeni'>('eski');
     const [sortAsc, setSortAsc] = useState(true);
     const [loading, setLoading] = useState(true);
-
-    // Önce tipleri güncelleyelim
-    type SupabaseWord = {
-        text: string;
-        origin: string;
-    };
-
-    type SupabaseWordRelation = {
-        difficulty: number;
-        old_words: SupabaseWord; // Dizi değil, doğrudan nesne
-        new_words: SupabaseWord; // Dizi değil, doğrudan nesne
-    };
 
     // Sonra fetchData fonksiyonunu düzeltelim
     useEffect(() => {
@@ -166,8 +142,8 @@ export default function Liste() {
                             key={kok}
                             onClick={() => setKokFilter(kok)}
                             className={`px-4 py-2 rounded-full font-medium hover:scale-105 transition-all duration-300 ${kokFilter === kok
-                                    ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
-                                    : 'list-button'
+                                ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
+                                : 'list-button'
                                 }`}
                         >
                             {kok.charAt(0).toUpperCase() + kok.slice(1)}
@@ -182,8 +158,8 @@ export default function Liste() {
                             key={z}
                             onClick={() => setZorlukFilter(z)}
                             className={`px-4 py-2 rounded-full font-medium hover:scale-105 transition-all duration-300 ${zorlukFilter === z
-                                    ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
-                                    : 'list-button'
+                                ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
+                                : 'list-button'
                                 }`}
                         >
                             {z === 0 ? 'Tümü' : '⭐'.repeat(z)}

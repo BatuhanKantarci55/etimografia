@@ -1,15 +1,11 @@
 import ClientProfilePage from './ClientProfilePage'
 
-interface ProfilePageProps {
-    params: { username: string }
-}
-
 export async function generateStaticParams() {
-    // Burada kullanıcı adlarını dinamik olarak çekebilirsin
-    // Şimdilik boş dizi dönüyoruz ki build hata vermesin
+    // İstersen buraya veritabanından username'leri çekip koyabilirsin.
+    // Şimdilik boş dizi döndürüyoruz, böylece build hatası olmaz.
     return []
 }
 
-export default async function Page({ params }: ProfilePageProps) {
+export default async function Page({ params }: { params: { username: string } }) {
     return <ClientProfilePage username={params.username} />
 }

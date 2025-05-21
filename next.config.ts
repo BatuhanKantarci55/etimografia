@@ -1,12 +1,8 @@
-// next.config.js
+// next.config.js veya next.config.ts
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-    eslint: {
-        ignoreDuringBuilds: true, // ✅ Vercel build sırasında lint hatalarını yok sayacak
-    },
-    experimental: {
-        appDir: true,
-    },
-};
+    reactStrictMode: true,
+    // ❌ experimental: { appDir: true } satırını kaldır
+}
 
-module.exports = nextConfig;
+module.exports = nextConfig

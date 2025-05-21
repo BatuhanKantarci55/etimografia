@@ -1,9 +1,7 @@
 import ClientProfilePage from './ClientProfilePage'
 
-interface ProfilePageProps {
-    params: { username: string }
-}
+export default async function Page({ params }: { params: Promise<{ username: string }> }) {
+    const { username } = await params
 
-export default async function Page({ params }: ProfilePageProps) {
-    return <ClientProfilePage username={params.username} />
+    return <ClientProfilePage username={username} />
 }

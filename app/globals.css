@@ -1,26 +1,602 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-bg-light: #d1e8f9;
+  --color-bg-dark: #161F2C;
+  --color-text-light: #2f2f2f;
+  --color-text-dark: white;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* Temel ayarlar */
+html {
+  color-scheme: light;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+html.dark {
+  color-scheme: dark;
+}
+
+/* Uygulama genel stilleri */
+html.dark body {
+  background: var(--color-bg-dark);
+  color: var(--color-text-dark);
+  transition: all 0.3s ease;
+}
+
+html.light body {
+  background: var(--color-bg-light);
+  color: var(--color-text-light);
+  transition: all 0.3s ease;
+}
+
+
+
+
+
+/** TABLOLAR **/
+/* top-left border-radius */
+table tr:first-child th:first-child {
+  border-top-left-radius: 20px;
+}
+
+/* top-right border-radius */
+table tr:first-child th:last-child {
+  border-top-right-radius: 20px;
+}
+
+/* bottom-left border-radius */
+table tr:last-child td:first-child {
+  border-bottom-left-radius: 20px;
+}
+
+/* bottom-right border-radius */
+table tr:last-child td:last-child {
+  border-bottom-right-radius: 20px;
+}
+
+html.light th {
+  background-color: #abbad5;
+  color: #111827;
+}
+
+html.dark th {
+  background-color: #273040;
+  color: white;
+}
+
+html.light tr:nth-child(odd) {
+  background-color: #ccdbf7
+}
+
+html.light tr:nth-child(even) {
+  background-color: #dae7ff
+}
+
+html.light tr:hover {
+  background-color: #bac8e3;
+}
+
+html.dark tr:nth-child(odd) {
+  background-color: #3e495a
+}
+
+html.dark tr:nth-child(even) {
+  background-color: #4a566a
+}
+
+html.dark tr:hover {
+  background-color: #363f4e;
+}
+
+
+
+
+
+
+/** SINAV EKRANI **/
+.exam-card {
+  background-color: #c8d4eb;
+}
+
+.dark .exam-card {
+  background-color: #343e51;
+}
+
+.exam-card2 {
+  background-color: #9cacca;
+}
+
+.dark .exam-card2 {
+  background-color: #252f42;
+}
+
+.chosen-exam-card {
+  background-color: rgb(120, 138, 174);
+}
+
+.dark .chosen-exam-card {
+  background-color: #151d2b;
+}
+
+.right-option-card {
+  background-color: rgb(79, 204, 135);
+}
+
+.dark .right-option-card {
+  background-color: rgb(27, 123, 70);
+}
+
+.wrong-option-card {
+  background-color: rgb(237, 91, 91);
+}
+
+.dark .wrong-option-card {
+  background-color: rgb(158, 36, 36);
+}
+
+.exam-navbar {
+  background-color: var(--color-bg-light);
+  border-top: 4px solid #abbad5;
+  transition: background-color 0.4s ease, border-top-color 0.4s ease;
+}
+
+.dark .exam-navbar {
+  background-color: var(--color-bg-dark);
+  border-top: 4px solid #2B3341;
+  transition: background-color 0.4s ease, border-top-color 0.4s ease;
+}
+
+.right-navbar {
+  background-color: #a3ec9a;
+  border-top: 4px solid #74c66a;
+  transition: background-color 0.4s ease, border-top-color 0.4s ease;
+}
+
+.dark .right-navbar {
+  background-color: #162c21;
+  border-top: 4px solid #2B3341;
+  transition: background-color 0.4s ease, border-top-color 0.4s ease;
+}
+
+.wrong-navbar {
+  background-color: #ec9a9a;
+  border-top: 4px solid #cc5a5a;
+  transition: background-color 0.4s ease, border-top-color 0.4s ease;
+}
+
+.dark .wrong-navbar {
+  background-color: #2c1616;
+  border-top: 4px solid #2B3341;
+  transition: background-color 0.4s ease, border-top-color 0.4s ease;
+}
+
+.left-exam-box {
+  background-color: #abbad5;
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.dark .left-exam-box {
+  background-color: #364153;
+  border-top-right-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.right-exam-box {
+  background-color: #abbad5;
+  border-top-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.dark .right-exam-box {
+  background-color: #364153;
+  border-top-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.control-button {
+  background-color: #5f97ff;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.4s ease;
+}
+
+.control-button:hover {
+  background-color: #4a7ddc;
+}
+
+.dark .control-button {
+  background-color: #303F9F;
+  border: none;
+  transition: background-color 0.4s ease;
+}
+
+.dark .control-button:hover {
+  background-color: #1A237E;
+}
+
+.control-button.dogru {
+  background-color: #54c045;
+}
+
+.control-button.dogru:hover {
+  background-color: #61b456;
+}
+
+.dark .control-button.dogru {
+  background-color: #237119;
+}
+
+.dark .control-button.dogru:hover {
+  background-color: #185b10;
+}
+
+.control-button.yanlis {
+  background-color: #e74b4b;
+}
+
+.control-button.yanlis:hover {
+  background-color: #d53d3d;
+}
+
+.dark .control-button.yanlis {
+  background-color: #7d1a1a;
+}
+
+.dark .control-button.yanlis:hover {
+  background-color: #621010;
+}
+
+.pas-button {
+  background-color: #abbad5;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.4s ease;
+}
+
+.pas-button:hover {
+  background-color: #90a3c6;
+}
+
+.dark .pas-button {
+  background-color: #364153;
+  border: none;
+  color: white;
+  transition: background-color 0.4s ease;
+}
+
+.dark .pas-button:hover {
+  background-color: #2c3443;
+}
+
+.top-bar {
+  background-color: #abbad5;
+}
+
+.dark .top-bar {
+  background-color: #364153;
+}
+
+.clock {
+  color: #9ba8c0;
+}
+
+.dark .clock {
+  color: #445268;
+}
+
+.x {
+  color: #9ba8c0;
+  cursor: pointer;
+  transition: color 0.4s ease;
+}
+
+.dark .x {
+  color: #445268;
+}
+
+.x:hover {
+  color: #667591;
+}
+
+.dark .x:hover {
+  color: #596b88;
+}
+
+
+
+/** LİSTE EKRANI **/
+.filtering {
+  background-color: #abbad5;
+}
+
+.dark .filtering {
+  background-color: #252f42;
+}
+
+.list-button {
+  background-color: #abbad5;
+  border: none;
+}
+
+.dark .list-button {
+  background-color: #273040;
+  border: none;
+}
+
+.chosen-list-button {
+  background-image: linear-gradient(to bottom right, #303F9F, #3948ac);
+  border: none;
+  color: white;
+}
+
+.dark .chosen-list-button {
+  background-image: linear-gradient(to bottom right, #303F9F, #3948ac);
+  border: none;
+}
+
+
+
+
+
+/** BUTON **/
+.button {
+  background-color: #abbad5;
+  border: none;
+}
+
+.chosen-button {
+  background-image: linear-gradient(to bottom right, #303F9F, #3948ac);
+  border: none;
+  color: white;
+}
+
+.dark .button {
+  background-color: #273040;
+  border: none;
+}
+
+.dark .chosen-button {
+  background-image: linear-gradient(to bottom right, #303F9F, #3948ac);
+  border: none;
+}
+
+
+
+
+
+/** Tema Simgesi **/
+.item {
+  background-color: #e3ebf9;
+}
+
+.dark .item {
+  background-color: #0f172a;
+}
+
+
+
+
+
+/** Giriş - Kaydol **/
+.login-button {
+  background-color: #303F9F;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.login-button:hover {
+  background-color: #3c4bb6;
+  cursor: pointer;
+}
+
+.dark .login-button {
+  background-color: #303F9F;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.dark .login-button:hover {
+  background-color: #25338d;
+  cursor: pointer;
+}
+
+.signup-button {
+  background-color: #17844a;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.signup-button:hover {
+  background-color: #2aa563;
+  cursor: pointer;
+}
+
+.dark .signup-button {
+  background-color: #17844a;
+  color: white;
+  transition: background-color 0.3s ease;
+}
+
+.signup-button:hover {
+  background-color: #10713d;
+  cursor: pointer;
+}
+
+
+
+
+
+@keyframes fill-left-to-right {
+  from {
+    width: 0%;
+  }
+
+  to {
+    width: 100%;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+.fill-animate {
+  animation: fill-left-to-right 0.6s ease-out forwards;
+  background-color: #22c55e;
+  /* Tailwind'in green-500 rengi */
+}
+
+.fill-animate-gold {
+  animation: fill-left-to-right 0.6s ease-out forwards;
+  background-color: #facc15;
+  /* Tailwind yellow-400 (altın sarısı) */
+}
+
+
+
+
+
+/**Profil Düzenle**/
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.2s ease-in-out;
+  }
+
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+}
+
+
+
+
+
+/**Profil**/
+.friends {
+  background-color: rgb(255, 194, 255);
+}
+
+.dark .friends {
+  background-color: rgb(75, 36, 75);
+}
+
+.totalPoint {
+  background-color: rgb(194, 204, 255);
+}
+
+.dark .totalPoint {
+  background-color: rgb(39, 45, 75);
+}
+
+.leadership {
+  background-color: rgb(194, 255, 209);
+}
+
+.dark .leadership {
+  background-color: rgb(35, 69, 43);
+}
+
+.achievement {
+  background-color: rgb(255, 253, 194);
+}
+
+.dark .achievement {
+  background-color: rgb(76, 75, 40);
+}
+
+.eksik-profil {
+  background-color: rgb(255, 253, 194);
+}
+
+.dark .eksik-profil {
+  background-color: rgb(76, 75, 40);
+}
+
+:root {
+  --theme-title-light: #111;
+  --theme-text-light: #222;
+  --theme-subtext-light: #555;
+  --theme-card-light: rgba(255, 255, 255, 0.8);
+  --theme-self-light: #4f46e5;
+
+  --theme-title-dark: #fff;
+  --theme-text-dark: #eee;
+  --theme-subtext-dark: #bbb;
+  --theme-card-dark: rgba(255, 255, 255, 0.05);
+  --theme-self-dark: #4338ca;
+}
+
+/* Tema geçişlerini otomatik yönetecek sınıflar */
+.theme-gold {
+  background: linear-gradient(135deg, #facc15, #eab308);
+}
+
+.dark .theme-gold {
+  background: linear-gradient(135deg, #aa8907, #725601);
+}
+
+.theme-silver {
+  background: linear-gradient(135deg, #d3d5da, #8e949f);
+}
+
+.dark .theme-silver {
+  background: linear-gradient(135deg, #85878a, #4c5057);
+}
+
+.theme-bronze {
+  background: linear-gradient(135deg, #eb8c20, #c7692f);
+}
+
+.dark .theme-bronze {
+  background: linear-gradient(135deg, #a95d05, #78350b);
+}
+
+.bg-theme-card {
+  background-color: var(--theme-card-light);
+}
+
+.bg-theme-self {
+  background-color: var(--theme-self-light);
+}
+
+.text-theme-title {
+  color: var(--theme-title-light);
+}
+
+.text-theme-text {
+  color: var(--theme-text-light);
+}
+
+.text-theme-subtext {
+  color: var(--theme-subtext-light);
+}
+
+/* Koyu tema desteği */
+.dark .bg-theme-card {
+  background-color: var(--theme-card-dark);
+}
+
+.dark .bg-theme-self {
+  background-color: var(--theme-self-dark);
+}
+
+.dark .text-theme-title {
+  color: var(--theme-title-dark);
+}
+
+.dark .text-theme-text {
+  color: var(--theme-text-dark);
+}
+
+.dark .text-theme-subtext {
+  color: var(--theme-subtext-dark);
 }

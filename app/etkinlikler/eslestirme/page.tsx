@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef } from 'react';
+import React, { useEffect, useState, useRef, useCallback } from 'react'; // useCallback eklendi
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
 import { X } from 'lucide-react';
@@ -55,16 +55,17 @@ export default function EslestirmeSinav() {
     const [geciciKirmizi, setGeciciKirmizi] = useState<string[]>([]);
     const timerRef = useRef<number | null>(null);
 
-    const fetchEslesmeler = async () => {
+    // fetchEslesmeler fonksiyonunu useCallback ile sarmaladık
+    const fetchEslesmeler = useCallback(async () => {
         try {
             const { data, error } = await supabase
                 .from('word_relations')
                 .select(`
-        id, 
-        difficulty, 
-        old_words!old_word_id(text),
-        new_words!new_word_id(text)
-      `);
+                    id, 
+                    difficulty, 
+                    old_words!old_word_id(text),
+                    new_words!new_word_id(text)
+                `);
 
             if (error) throw error;
             if (!data) throw new Error('Veri alınamadı');
@@ -85,9 +86,10 @@ export default function EslestirmeSinav() {
             console.error('Veri çekme hatası:', error);
             return false;
         }
-    };
+    }, [zorluk]); // zorluk state'ini bağımlılık olarak ekledik
 
-    const yeniSetOlustur = () => {
+    // yeniSetOlustur fonksiyonunu useCallback ile sarmaladık
+    const yeniSetOlustur = useCallback(() => {
         const uygunEslesmeler = eslesmeler.filter(e => !kullanilanIdler.includes(e.id));
         const secilenler = shuffleArray(uygunEslesmeler).slice(0, 5);
 
@@ -108,9 +110,9 @@ export default function EslestirmeSinav() {
         const karistirilmis = shuffleArray(secilenler);
         setEskiList(karistirilmis);
         setYeniList(shuffleArray(karistirilmis));
-    };
+    }, [eslesmeler, kullanilanIdler]); // bağımlılıkları ekledik
 
-    const baslat = async () => {
+    const baslat = useCallback(async () => {
         setBasladi(true);
         setBitti(false);
         setSure(60);
@@ -120,9 +122,7 @@ export default function EslestirmeSinav() {
         setYanlisSayisi(0);
         setGeciciKirmizi([]);
         setKullanilanIdler([]);
-
-        // Verileri yüklemeyi useEffect'e bırakıyoruz
-    };
+    }, []); // bağımlılık yok
 
     useEffect(() => {
         if (!basladi) return;
@@ -167,7 +167,9 @@ export default function EslestirmeSinav() {
             isMounted = false;
             if (timer) clearInterval(timer);
         };
-    }, [basladi]);
+    }, [basladi, fetchEslesmeler, yeniSetOlustur]); // Eksik bağımlılıkları ekledik
+
+    // ... (kalan kodlar aynı kalacak)
 
     const tikla = (kelime: string, tip: 'eski' | 'yeni') => {
         if (!aktifSecim) {

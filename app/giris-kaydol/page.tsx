@@ -65,7 +65,7 @@ export default function GirisKaydolFormu() {
         setMesaj('')
 
         // Kullanıcı adının benzersizliğini kontrol et
-        const { data: varOlanKullanici, error: kullaniciKontrolHata } = await supabase
+        const { data: varOlanKullanici } = await supabase
             .from('profiles')
             .select('id')
             .eq('username', kullaniciAdi)

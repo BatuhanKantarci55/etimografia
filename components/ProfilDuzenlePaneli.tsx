@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import Image from 'next/image';
 
 type Props = {
     acik: boolean
@@ -136,7 +137,7 @@ export default function ProfilDuzenlePaneli({
                         <p className="text-gray-500">Avatarlar yükleniyor...</p>
                     )}
                     {avatarListesi.map((url, i) => (
-                        <img
+                        <Image
                             key={i}
                             src={url}
                             alt={`avatar-${i}`}

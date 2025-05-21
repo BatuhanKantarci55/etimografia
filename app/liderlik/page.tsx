@@ -2,8 +2,9 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { Medal, UserCircle2, Crown } from 'lucide-react'
+import { Medal, UserCircle2 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import Image from 'next/image';
 
 type Kullanici = {
     id: string
@@ -79,13 +80,16 @@ export default function LiderlikSayfasi() {
                                     {isIlkUc ? <Medal className="w-6 h-6" /> : <span>{index + 1}</span>}
                                 </div>
 
-                                <div className="relative">
-                                    <img
+                                <div className="relative w-16 h-16">
+                                    <Image
                                         src={kullanici.avatar}
                                         alt={kullanici.username}
-                                        className="w-16 h-16 rounded-full object-cover"
+                                        fill
+                                        className="rounded-full object-cover"
                                     />
                                 </div>
+
+
 
                                 <div>
                                     <p className="font-semibold text-lg flex items-center gap-2 text-theme-text">

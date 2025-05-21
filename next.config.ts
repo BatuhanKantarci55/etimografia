@@ -6,3 +6,10 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
+
+// next.config.js
+module.exports = {
+    images: {
+        domains: ['ucatuzhvtvmnbsnuqfaj.supabase.co'],
+    },
+};

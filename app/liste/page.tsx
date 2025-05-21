@@ -12,6 +12,18 @@ type Kelime = {
     kokYeni: string;
 };
 
+// Önce tipleri güncelleyelim
+type SupabaseWord = {
+    text: string;
+    origin: string;
+};
+
+type SupabaseWordRelation = {
+    difficulty: number;
+    old_words: SupabaseWord; // Dizi değil, doğrudan nesne
+    new_words: SupabaseWord; // Dizi değil, doğrudan nesne
+};
+
 const getKokClass = (kok: string) => {
     switch (kok?.toLowerCase()) {
         case 'arapça':
@@ -37,13 +49,23 @@ export default function Liste() {
     const [search, setSearch] = useState('');
     const [kokFilter, setKokFilter] = useState('hepsi');
     const [zorlukFilter, setZorlukFilter] = useState(0);
-
     const [sortField, setSortField] = useState<'eski' | 'yeni'>('eski');
     const [sortAsc, setSortAsc] = useState(true);
-
     const [loading, setLoading] = useState(true);
 
+    // Önce tipleri güncelleyelim
+    type SupabaseWord = {
+        text: string;
+        origin: string;
+    };
 
+    type SupabaseWordRelation = {
+        difficulty: number;
+        old_words: SupabaseWord; // Dizi değil, doğrudan nesne
+        new_words: SupabaseWord; // Dizi değil, doğrudan nesne
+    };
+
+    // Sonra fetchData fonksiyonunu düzeltelim
     useEffect(() => {
         const fetchData = async () => {
             const { data, error } = await supabase
@@ -60,24 +82,32 @@ export default function Liste() {
                 return;
             }
 
-            const kelimeListesi: Kelime[] = (data ?? []).map((item: any) => ({
-                eski: item.old_words.text,
-                yeni: item.new_words.text,
-                zorluk: item.difficulty,
-                kokEski: item.old_words.origin,
-                kokYeni: item.new_words.origin,
-            }));
+            // Veriyi doğru şekilde tip kontrolü yaparak dönüştürüyoruz
+            const kelimeListesi: Kelime[] = data?.map((item: unknown) => {
+                const relation = item as {
+                    difficulty: number;
+                    old_words: { text: string; origin: string };
+                    new_words: { origin: string; text: string };
+                };
+
+                return {
+                    eski: relation.old_words.text,
+                    yeni: relation.new_words.text,
+                    zorluk: relation.difficulty,
+                    kokEski: relation.old_words.origin,
+                    kokYeni: relation.new_words.origin,
+                };
+            }) || [];
 
             setKelimeler(kelimeListesi);
             setLoading(false);
         };
 
         fetchData();
-    }, []);
-
+    }, [supabase]);
 
     const filtrelenmisKelimeler = useMemo(() => {
-        let result = kelimeler.filter((k) => {
+        const result = kelimeler.filter((k) => {
             const matchesSearch =
                 k.eski?.toLowerCase().includes(search.toLowerCase()) ||
                 k.yeni?.toLowerCase().includes(search.toLowerCase());
@@ -119,7 +149,7 @@ export default function Liste() {
             {/* Arama ve filtre alanı */}
             <div className="space-y-6 mb-6">
                 {/* Arama alanı */}
-                <div className="flex justify-center ">
+                <div className="flex justify-center">
                     <input
                         type="text"
                         placeholder="Kelime ara..."
@@ -136,8 +166,8 @@ export default function Liste() {
                             key={kok}
                             onClick={() => setKokFilter(kok)}
                             className={`px-4 py-2 rounded-full font-medium hover:scale-105 transition-all duration-300 ${kokFilter === kok
-                                ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
-                                : 'list-button'
+                                    ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
+                                    : 'list-button'
                                 }`}
                         >
                             {kok.charAt(0).toUpperCase() + kok.slice(1)}
@@ -152,8 +182,8 @@ export default function Liste() {
                             key={z}
                             onClick={() => setZorlukFilter(z)}
                             className={`px-4 py-2 rounded-full font-medium hover:scale-105 transition-all duration-300 ${zorlukFilter === z
-                                ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
-                                : 'list-button '
+                                    ? 'chosen-list-button shadow-md hover:scale-105 transition-all'
+                                    : 'list-button'
                                 }`}
                         >
                             {z === 0 ? 'Tümü' : '⭐'.repeat(z)}
@@ -161,9 +191,6 @@ export default function Liste() {
                     ))}
                 </div>
             </div>
-
-
-
 
             {/* Sonuçlar */}
             {loading ? (
@@ -226,7 +253,6 @@ export default function Liste() {
                     </table>
                 </motion.div>
             )}
-
         </div>
     );
 }

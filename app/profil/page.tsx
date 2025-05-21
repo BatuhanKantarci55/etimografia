@@ -5,6 +5,7 @@ import { FaCog } from 'react-icons/fa'
 import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 import ProfilDuzenlePaneli from '@/components/ProfilDuzenlePaneli'
 import { supabase } from '@/lib/supabaseClient'
+import Image from 'next/image';
 
 export default function ProfilSayfasi() {
     const [siralama, setSiralama] = useState<number | null>(null)
@@ -156,7 +157,7 @@ export default function ProfilSayfasi() {
 
             {/* Profil Bilgileri */}
             <div className="flex flex-col items-center gap-2 mb-4">
-                <img
+                <Image
                     src={kullanici.avatarUrl}
                     alt="avatar"
                     className="w-32 h-32 rounded-full object-cover shadow-md"
@@ -182,7 +183,7 @@ export default function ProfilSayfasi() {
                                 key={arkadas.username}
                                 className="py-1 flex items-center gap-2"
                             >
-                                <img
+                                <Image
                                     src={arkadas.avatar}
                                     alt={`${arkadas.username} avatar`}
                                     className="w-12 h-12 rounded-full object-cover"

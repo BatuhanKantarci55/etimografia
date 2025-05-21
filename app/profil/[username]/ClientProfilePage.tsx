@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
+import Image from 'next/image';
 
 function zamanFarkiMetni(lastActiveStr: string | null) {
     if (!lastActiveStr) return 'Aktiflik bilgisi yok';
@@ -147,7 +148,7 @@ export default function ClientProfilePage({ username }: { username: string }) {
     return (
         <div className="max-w-lg mx-auto p-4 text-center">
             <div className="flex flex-col items-center gap-2 mb-6">
-                <img
+                <Image
                     src={profile.avatar || '/avatar.png'}
                     alt="avatar"
                     className="w-32 h-32 rounded-full object-cover shadow-md"

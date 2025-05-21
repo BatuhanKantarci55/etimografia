@@ -7,7 +7,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, X, Clock, Info } from 'lucide-react';
+import { ArrowRightLeft, X, Clock } from 'lucide-react';
 import { playCorrectSound, playWrongSound, playComboSound, playFireworksSound } from '@/utils/sounds';
 import { puanGuncelle } from '@/lib/puan';
 
@@ -177,8 +177,6 @@ export default function Sinav() {
             isChecked ? sonraki() : kontrolEt();
         }
     };
-
-    const [showInfo, setShowInfo] = useState(false);
 
     if (bitti) {
         puanGuncelle(puan);

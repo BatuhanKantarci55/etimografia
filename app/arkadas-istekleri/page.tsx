@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import Link from 'next/link'
+import Image from 'next/image';
 
 interface Istek {
     id: string
@@ -96,7 +97,7 @@ export default function ArkadasIstekleri() {
                     {istekler.map((kisi) => (
                         <li key={kisi.id} className="flex items-center justify-between p-3 bg-white/10 dark:bg-black/20 border-b border-white/10 rounded-lg">
                             <Link href={`/profil/${kisi.username}`} className="flex items-center gap-3">
-                                <img
+                                <Image
                                     src={kisi.avatar || '/avatar.png'}
                                     alt="avatar"
                                     className="w-12 h-12 rounded-full object-cover"

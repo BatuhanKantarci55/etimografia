@@ -160,6 +160,8 @@ export default function ProfilSayfasi() {
                 <Image
                     src={kullanici.avatarUrl}
                     alt="avatar"
+                    width={64}
+                    height={64}
                     className="w-32 h-32 rounded-full object-cover shadow-md"
                 />
                 <h2 className="text-lg font-bold">{kullanici.ad}</h2>

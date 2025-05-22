@@ -141,6 +141,8 @@ export default function ProfilDuzenlePaneli({
                             key={i}
                             src={url}
                             alt={`avatar-${i}`}
+                            width={64}
+                            height={64}
                             onClick={() => setAvatar(url)}
                             className={`w-16 h-16 rounded-full cursor-pointer border-4 transition-colors duration-200 ${avatar === url ? 'border-blue-500' : 'border-transparent hover:border-gray-300'
                                 }`}

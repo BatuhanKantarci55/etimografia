@@ -100,6 +100,8 @@ export default function ArkadasIstekleri() {
                                 <Image
                                     src={kisi.avatar || '/avatar.png'}
                                     alt="avatar"
+                                    width={64}
+                                    height={64}
                                     className="w-12 h-12 rounded-full object-cover"
                                 />
                                 <div>

@@ -151,6 +151,8 @@ export default function ClientProfilePage({ username }: { username: string }) {
                 <Image
                     src={profile.avatar || '/avatar.png'}
                     alt="avatar"
+                    width={64}
+                    height={64}
                     className="w-32 h-32 rounded-full object-cover shadow-md"
                 />
                 <h1 className="text-lg font-bold">{tamAd || `@${profile.username}`}</h1>

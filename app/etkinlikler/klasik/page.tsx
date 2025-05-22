@@ -2,12 +2,11 @@
 
 import avatar10right from './resim/avatar10right.png';
 import avatar11left from './resim/avatar11left.png';
-
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, X, Clock, Info } from 'lucide-react';
+import { ArrowRightLeft, X, Clock } from 'lucide-react';
 import { playCorrectSound, playWrongSound, playComboSound, playFireworksSound } from '@/utils/sounds';
 import { puanGuncelle } from '@/lib/puan';
 
@@ -51,21 +50,59 @@ export default function Sinav() {
 
     const shuffle = <T,>(array: T[]) => array.sort(() => Math.random() - 0.5);
 
-    const fetchKelimeler = async () => {
-        const { data } = await supabase
-            .from('word_relations')
-            .select(`difficulty, old_words(text), new_words(text)`);
-        if (!data) return;
-        const kelimeler: Kelime[] = data.map((item: any) => ({
-            eski: item.old_words.text,
-            yeni: item.new_words.text,
-            zorluk: item.difficulty,
-        }));
-        const filtreli = kelimeler.filter(k =>
-            zorluk === 'karisik' ? true : k.zorluk === zorluk
-        );
-        setSoruListesi(shuffle(filtreli));
-    };
+    const fetchKelimeler = useCallback(async () => {
+        try {
+            // 1. İlişki verilerini çek
+            const { data: relations, error: relationsError } = await supabase
+                .from('word_relations')
+                .select('id, difficulty, old_word_id, new_word_id');
+
+            if (relationsError) throw relationsError;
+            if (!relations || relations.length === 0) {
+                console.warn('Hiç ilişki verisi bulunamadı');
+                return;
+            }
+
+            // 2. Tüm kelimeleri tek seferde çek
+            const { data: oldWords, error: oldWordsError } = await supabase
+                .from('old_words')
+                .select('id, text');
+
+            const { data: newWords, error: newWordsError } = await supabase
+                .from('new_words')
+                .select('id, text');
+
+            if (oldWordsError || newWordsError) throw oldWordsError || newWordsError;
+
+            // 3. Verileri birleştir
+            const combinedData = relations.map(relation => {
+                const oldWord = oldWords?.find(w => w.id === relation.old_word_id);
+                const newWord = newWords?.find(w => w.id === relation.new_word_id);
+
+                return {
+                    difficulty: relation.difficulty,
+                    old_word: oldWord?.text || '',
+                    new_word: newWord?.text || ''
+                };
+            });
+
+            // 4. Zorluk filtresi uygula
+            const filtreli = combinedData.filter(item =>
+                zorluk === 'karisik' || item.difficulty === zorluk
+            );
+
+            // 5. Kelimeleri oluştur
+            const kelimeler: Kelime[] = filtreli.map(item => ({
+                eski: item.old_word,
+                yeni: item.new_word,
+                zorluk: item.difficulty,
+            }));
+
+            setSoruListesi(shuffle(kelimeler));
+        } catch (error) {
+            console.error('Veri çekme hatası:', error);
+        }
+    }, [yon, zorluk]);
 
     const baslat = async () => {
         await fetchKelimeler();
@@ -177,8 +214,6 @@ export default function Sinav() {
             isChecked ? sonraki() : kontrolEt();
         }
     };
-
-    const [showInfo, setShowInfo] = useState(false);
 
     if (bitti) {
         puanGuncelle(puan);

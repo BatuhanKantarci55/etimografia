@@ -19,8 +19,8 @@
     "lucide-react": "^0.506.0",
     "next": "15.3.1",
     "next-themes": "^0.4.6",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
     "react-icons": "^5.5.0"
   },
   "devDependencies": {
@@ -30,8 +30,8 @@
     "@types/howler": "^2.2.12",
     "@types/lodash": "^4.17.16",
     "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",
     "tailwindcss": "^4",

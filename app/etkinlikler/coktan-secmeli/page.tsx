@@ -143,18 +143,30 @@ export default function SecimliSinav() {
 
         if (dogru) {
             playCorrectSound();
-            setPuan(p => p + sorular[indeks].zorluk * 2);
-            setDogruSayisi(c => c + 1);
-            setSure(s => s + 1);
 
-            setStreak(s => {
-                const yeniStreak = s + 1;
-                if (yeniStreak >= 5 && !comboAktif) {
+            // Streak'i önce arttırıyoruz ki yeni değeri kontrol edebilelim
+            setStreak(prevStreak => {
+                const newStreak = prevStreak + 1;
+
+                // Sadece 5. streak'te ve combo aktif değilken ses çal
+                if (newStreak === 5 && !comboAktif) {
                     playComboSound();
                     setComboAktif(true);
                 }
-                return Math.min(5, yeniStreak);
+
+                return newStreak;
             });
+
+            setPuan(p => {
+                let artanPuan = sorular[indeks].zorluk * 2;
+                if (streak + 1 >= 5) { // streak + 1 çünkü henüz güncellenmedi
+                    artanPuan += 2; // Combo bonus puanı
+                }
+                return p + artanPuan;
+            });
+
+            setDogruSayisi(c => c + 1);
+            setSure(s => s + 0.5);
         } else {
             playWrongSound();
             setPuan(p => Math.max(0, p - 5));
@@ -170,7 +182,7 @@ export default function SecimliSinav() {
                 setBitti(true);
             }, 1000);
         }
-    }, [sorular, indeks, comboAktif]);
+    }, [sorular, indeks, comboAktif, streak]);
 
     const sonraki = useCallback(() => {
         if (indeks + 1 >= sorular.length) {

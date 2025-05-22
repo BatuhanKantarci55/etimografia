@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { Medal, UserCircle2 } from 'lucide-react'
 import { motion } from 'framer-motion'
-import Image from 'next/image';
+import Image from 'next/image'
+import Link from 'next/link' // ✅ Link bileşenini ekledik
 
 type Kullanici = {
     id: string
@@ -80,16 +81,17 @@ export default function LiderlikSayfasi() {
                                     {isIlkUc ? <Medal className="w-6 h-6" /> : <span>{index + 1}</span>}
                                 </div>
 
-                                <div className="relative w-16 h-16">
-                                    <Image
-                                        src={kullanici.avatar}
-                                        alt={kullanici.username}
-                                        fill
-                                        className="rounded-full object-cover"
-                                    />
-                                </div>
-
-
+                                {/* ✅ Avatarı tıklanabilir yaptık */}
+                                <Link href={`/profil/${kullanici.username}`}>
+                                    <div className="relative w-16 h-16 hover:scale-105 transition-transform">
+                                        <Image
+                                            src={kullanici.avatar}
+                                            alt={kullanici.username}
+                                            fill
+                                            className="rounded-full object-cover"
+                                        />
+                                    </div>
+                                </Link>
 
                                 <div>
                                     <p className="font-semibold text-lg flex items-center gap-2 text-theme-text">

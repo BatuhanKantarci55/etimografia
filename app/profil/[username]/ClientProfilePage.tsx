@@ -2,46 +2,50 @@
 
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import Image from 'next/image';
+import Image from 'next/image'
+
+type Profile = {
+    id: string
+    name: string | null
+    surname: string | null
+    username: string
+    avatar: string | null
+    created_at: string
+    total_score: number | null
+    highest_score: number | null
+    last_active: string | null
+}
 
 function zamanFarkiMetni(lastActiveStr: string | null) {
-    if (!lastActiveStr) return 'Aktiflik bilgisi yok';
+    if (!lastActiveStr) return 'Aktiflik bilgisi yok'
 
-    const lastActive = new Date(lastActiveStr);
-    const now = new Date();
-    const diffMs = now.getTime() - lastActive.getTime();
-    const diffSeconds = Math.floor(diffMs / 1000);
-    const diffMinutes = Math.floor(diffSeconds / 60);
-    const diffHours = Math.floor(diffMinutes / 60);
+    const lastActive = new Date(lastActiveStr)
+    const now = new Date()
+    const diffMs = now.getTime() - lastActive.getTime()
+    const diffSeconds = Math.floor(diffMs / 1000)
+    const diffMinutes = Math.floor(diffSeconds / 60)
+    const diffHours = Math.floor(diffMinutes / 60)
 
-    if (diffSeconds < 60) return 'Şu anda çevrimiçi';
-    if (diffMinutes < 60) return `${diffMinutes} dakika önce aktifti`;
-    if (diffHours < 24) return `${diffHours} saat önce aktifti`;
+    if (diffSeconds < 60) return 'Şu anda çevrimiçi'
+    if (diffMinutes < 60) return `${diffMinutes} dakika önce aktifti`
+    if (diffHours < 24) return `${diffHours} saat önce aktifti`
 
     return `Son aktiflik: ${lastActive.toLocaleDateString('tr-TR', {
         day: 'numeric',
         month: 'short',
-        year: 'numeric'
-    })}`;
+        year: 'numeric',
+    })}`
 }
 
 export default function ClientProfilePage({ username }: { username: string }) {
-    const [profile, setProfile] = useState<{
-        name: string | null
-        surname: string | null
-        username: string
-        avatar: string | null
-        created_at: string
-        total_score: number | null
-        id: string
-        last_active: string | null
-    } | null>(null)
-
+    const [profile, setProfile] = useState<Profile | null>(null)
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
     const [girisYapanID, setGirisYapanID] = useState<string | null>(null)
     const [hedefID, setHedefID] = useState<string | null>(null)
     const [arkadaslikDurumu, setArkadaslikDurumu] = useState<'arkadas' | 'bekliyor' | 'yok'>('yok')
+    const [leaderboardSirrasi, setLeaderboardSirrasi] = useState<number | null>(null)
+    const [enYuksekSira, setEnYuksekSira] = useState<number | null>(null)
 
     useEffect(() => {
         async function fetchData() {
@@ -50,7 +54,7 @@ export default function ClientProfilePage({ username }: { username: string }) {
 
             const { data: prof, error: profError } = await supabase
                 .from('profiles')
-                .select('id, name, surname, username, avatar, created_at, total_score, last_active')
+                .select('id, name, surname, username, avatar, created_at, total_score, highest_score, last_active')
                 .eq('username', username)
                 .single()
 
@@ -63,8 +67,31 @@ export default function ClientProfilePage({ username }: { username: string }) {
             setProfile(prof)
             setHedefID(prof.id)
 
+            // Toplam puan sırası
+            const { data: leaderboard } = await supabase
+                .from('profiles')
+                .select('id')
+                .order('total_score', { ascending: false })
+
+            const sira = leaderboard?.findIndex(p => p.id === prof.id)
+            if (sira !== undefined && sira !== -1) {
+                setLeaderboardSirrasi(sira + 1)
+            }
+
+            // Highest score sırası
+            const { data: leaderboardHighest } = await supabase
+                .from('profiles')
+                .select('id')
+                .order('highest_score', { ascending: false })
+
+            const sira2 = leaderboardHighest?.findIndex(p => p.id === prof.id)
+            if (sira2 !== undefined && sira2 !== -1) {
+                setEnYuksekSira(sira2 + 1)
+            }
+
+            // Giriş yapan kullanıcıyı kontrol et
             const {
-                data: { user }
+                data: { user },
             } = await supabase.auth.getUser()
 
             if (!user) {
@@ -80,6 +107,7 @@ export default function ClientProfilePage({ username }: { username: string }) {
                 return
             }
 
+            // Arkadaşlık durumu
             const { data: iliski } = await supabase
                 .from('friendships')
                 .select('*')
@@ -109,38 +137,32 @@ export default function ClientProfilePage({ username }: { username: string }) {
         const { error } = await supabase.from('friendships').insert({
             user_id: girisYapanID,
             friend_id: hedefID,
-            status: 'pending'
+            status: 'pending',
         })
         if (!error) setArkadaslikDurumu('bekliyor')
     }
 
     async function arkadasligiBitir() {
         if (!girisYapanID || !hedefID) return
-
         const { error } = await supabase
             .from('friendships')
             .delete()
             .or(
                 `and(user_id.eq.${girisYapanID},friend_id.eq.${hedefID}),and(user_id.eq.${hedefID},friend_id.eq.${girisYapanID})`
             )
-
         if (!error) {
             setArkadaslikDurumu('yok')
         }
     }
 
-    if (loading)
-        return <div className="text-center mt-10 text-gray-600">Yükleniyor...</div>
-
-    if (error)
-        return <div className="text-center mt-10 text-red-600 font-semibold">{error}</div>
-
+    if (loading) return <div className="text-center mt-10 text-gray-600">Yükleniyor...</div>
+    if (error) return <div className="text-center mt-10 text-red-600 font-semibold">{error}</div>
     if (!profile) return null
 
     const tamAd = `${profile.name ?? ''} ${profile.surname ?? ''}`.trim()
     const katilmaTarihi = new Date(profile.created_at).toLocaleDateString('tr-TR', {
         year: 'numeric',
-        month: 'long'
+        month: 'long',
     })
     const aktiflikDurumu = zamanFarkiMetni(profile.last_active)
     const aktiflikRenk = aktiflikDurumu === 'Şu anda çevrimiçi' ? 'text-green-600' : 'text-gray-500'
@@ -161,10 +183,22 @@ export default function ClientProfilePage({ username }: { username: string }) {
                 <p className={`text-sm italic ${aktiflikRenk}`}>{aktiflikDurumu}</p>
             </div>
 
-            <div className="grid grid-cols-1 gap-4 text-center mb-6">
+            <div className="grid grid-cols-2 gap-4 text-center mb-6">
                 <div className="exam-card p-4 rounded-xl shadow">
                     <p className="text-xs text-gray-500">Toplam Puan</p>
                     <p className="text-lg font-bold">{profile.total_score ?? 0}</p>
+                </div>
+                <div className="exam-card p-4 rounded-xl shadow">
+                    <p className="text-xs text-gray-500">Sıralama</p>
+                    <p className="text-lg font-bold">#{leaderboardSirrasi ?? '-'}</p>
+                </div>
+                <div className="exam-card p-4 rounded-xl shadow">
+                    <p className="text-xs text-gray-500">En Yüksek Puan</p>
+                    <p className="text-lg font-bold">{profile.highest_score ?? 0}</p>
+                </div>
+                <div className="exam-card p-4 rounded-xl shadow">
+                    <p className="text-xs text-gray-500">En Yüksek Puan Sırası</p>
+                    <p className="text-lg font-bold">#{enYuksekSira ?? '-'}</p>
                 </div>
             </div>
 

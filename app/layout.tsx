@@ -13,6 +13,9 @@ const nunito = Nunito({
 export const metadata = {
   title: 'Etimografia',
   description: 'Eski Türkçe – Yeni Türkçe Sözlük ve Sınav Uygulaması',
+  icons: {
+    icon: '/simge.png',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

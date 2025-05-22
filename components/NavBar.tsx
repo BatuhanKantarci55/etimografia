@@ -27,7 +27,7 @@ const NavItem = ({
 }) => (
     <Link href={path}>
         <div className="flex items-center gap-2 px-2 py-1 hover:scale-105 transition cursor-pointer">
-            <Icon size={20} />
+            <Icon className="w-6 h-6 sm:w-5 sm:h-5" />
             <span className="hidden md:inline">{label}</span>
         </div>
     </Link>
@@ -146,10 +146,11 @@ const NavBar = () => {
         <nav className="fixed top-0 left-0 w-full z-50 px-6 py-3 backdrop-blur-lg bg-white/10 dark:bg-black/30 border-b border-white/10 shadow-md flex justify-between items-center">
             <Link
                 href="/"
-                className="text-2xl font-bold tracking-wide text-white"
+                className="text-2xl font-bold tracking-wide text-white hidden sm:inline"
             >
                 Etimografia
             </Link>
+
 
             <div className="hidden md:flex items-center gap-4 flex-grow max-w-xl relative mx-6">
                 {user && (
@@ -180,7 +181,7 @@ const NavBar = () => {
                 )}
             </div>
 
-            <div className="flex items-center gap-3 text-base font-medium text-white">
+            <div className="flex items-center justify-evenly flex-grow flex-nowrap text-base font-medium text-white">
                 <NavItem label="Etkinlikler" path="/etkinlikler" icon={BookOpen} />
                 <NavItem label="Liste" path="/liste" icon={List} />
                 <NavItem label="Liderlik" path="/liderlik" icon={Trophy} />
@@ -189,7 +190,7 @@ const NavBar = () => {
                         <NavItem label="Profil" path="/profil" icon={UserIcon} />
                         <Link href="/arkadas-istekleri" className="relative">
                             <div className="flex items-center gap-2 px-2 py-1 hover:scale-105 transition cursor-pointer">
-                                <Users size={20} />
+                                <Users className="w-6 h-6 sm:w-5 sm:h-5" />
                                 <span className="hidden md:inline">İstekler</span>
                                 {pendingRequestsCount > 0 && (
                                     <span className="absolute -top-2 -right-3 bg-red-500 text-white rounded-full text-xs w-5 h-5 flex items-center justify-center font-bold shadow-md">
@@ -200,9 +201,9 @@ const NavBar = () => {
                         </Link>
                         <button
                             onClick={handleSignOut}
-                            className="flex items-center gap-2 px-3 py-1 rounded-full bg-gradient-to-r from-red-500 to-red-700 hover:scale-105 transition text-white text-sm shadow"
+                            className="flex items-center gap-2 px-3 py-2 sm:px-2 sm:py-1 rounded-full bg-gradient-to-r from-red-500 to-red-700 hover:scale-105 transition text-white text-sm shadow"
                         >
-                            <LogOut size={18} />
+                            <LogOut className="w-6 h-6 sm:w-5 sm:h-5" />
                             <span className="hidden md:inline">Çıkış</span>
                         </button>
                     </>
@@ -217,6 +218,7 @@ const NavBar = () => {
                     {theme === 'dark' ? '🌙' : '🌞'}
                 </button>
             </div>
+
         </nav>
     );
 };

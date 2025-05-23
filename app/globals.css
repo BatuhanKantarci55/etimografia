@@ -427,7 +427,13 @@ html.dark tr:hover {
   cursor: pointer;
 }
 
+.input-button {
+  background-color: rgba(0, 0, 0, 0.15);
+}
 
+.dark .input-button {
+  background-color: rgba(255, 255, 255, 0.05)
+}
 
 
 

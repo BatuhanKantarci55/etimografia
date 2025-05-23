@@ -1,25 +1,12 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Loader2 } from 'lucide-react'
 
-const FloatingInput = ({
-    id,
-    type,
-    label,
-    value,
-    onChange,
-}: {
-    id: string
-    type: string
-    label: string
-    value: string
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
-}) => {
+const FloatingInput = ({ id, type, label, value, onChange }: any) => {
     const [focused, setFocused] = useState(false)
-
     const yukariCik = focused || value.length > 0
 
     return (
@@ -31,7 +18,7 @@ const FloatingInput = ({
                 onChange={onChange}
                 onFocus={() => setFocused(true)}
                 onBlur={() => setFocused(false)}
-                className="peer h-12 w-full rounded-xl px-4 pt-4 pb-1 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition button"
+                className="peer h-12 w-full rounded-xl px-4 pt-4 pb-1 placeholder-transparent focus:outline-none focus:ring-2 focus:ring-blue-400 transition input-button"
                 placeholder={label}
             />
             <label
@@ -47,7 +34,6 @@ const FloatingInput = ({
     )
 }
 
-
 export default function GirisKaydolFormu() {
     const [mod, setMod] = useState<'giris' | 'kaydol'>('giris')
     const [eposta, setEposta] = useState('')
@@ -60,11 +46,21 @@ export default function GirisKaydolFormu() {
         /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     const sifreGecerliMi = (s: string) => s.length >= 6
 
+    // Kullanıcı adı geçerli mi?
+    const kullaniciAdiGecerliMi = (kadi: string) =>
+        /^[a-zA-Z0-9]+$/.test(kadi) && !/\s/.test(kadi)
+
     const kaydol = async () => {
         setYükleniyor(true)
         setMesaj('')
 
-        // Kullanıcı adının benzersizliğini kontrol et
+        // Kullanıcı adı geçerlilik kontrolü
+        if (!kullaniciAdiGecerliMi(kullaniciAdi)) {
+            setMesaj('Kullanıcı adı yalnızca harf ve rakam içerebilir, boşluk veya özel karakter içeremez.')
+            setYükleniyor(false)
+            return
+        }
+
         const { data: varOlanKullanici } = await supabase
             .from('profiles')
             .select('id')
@@ -77,7 +73,6 @@ export default function GirisKaydolFormu() {
             return
         }
 
-        // Supabase ile e-posta ve şifreyle kayıt ol
         const { data, error } = await supabase.auth.signUp({
             email: eposta,
             password: sifre,
@@ -96,22 +91,16 @@ export default function GirisKaydolFormu() {
                 .insert([{ id: userId, username: kullaniciAdi }])
 
             if (profilHata) {
-                if (profilHata.code === '23505') {
-                    setMesaj('Bu kullanıcı adı zaten alınmış. Lütfen başka bir tane seçin.')
-                } else {
-                    setMesaj('Profil oluşturulurken bir hata oluştu: ' + profilHata.message)
-                }
+                setMesaj('Profil oluşturulurken hata oluştu.')
                 setYükleniyor(false)
                 return
             }
 
-            // ✅ Kayıt başarılıysa e-posta doğrulama ekranına yönlendir
             window.location.href = '/dogrulama-bekleniyor'
         }
 
         setYükleniyor(false)
     }
-
 
     const girisYap = async () => {
         setYükleniyor(true)
@@ -129,35 +118,40 @@ export default function GirisKaydolFormu() {
         }
 
         if (data.user?.email_confirmed_at === null) {
-            setMesaj('E-posta adresiniz henüz doğrulanmadı. Lütfen e-postanıza gönderilen doğrulama bağlantısını tıklayın.')
+            setMesaj('E-posta doğrulanmamış. Mail kutunuzu kontrol edin.')
             setYükleniyor(false)
             return
         }
 
-        // Giriş başarılı ve e-posta doğrulandıysa anasayfaya yönlendir
         window.location.href = '/'
         setYükleniyor(false)
     }
 
-
     const gonderimHazir =
         epostaGecerliMi(eposta) &&
         sifreGecerliMi(sifre) &&
-        (mod === 'giris' || kullaniciAdi.length >= 3)
+        (mod === 'giris' || (kullaniciAdi.length >= 3 && kullaniciAdiGecerliMi(kullaniciAdi)))
+
+    const handleKeyPress = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' && gonderimHazir && !yükleniyor) {
+            mod === 'giris' ? girisYap() : kaydol()
+        }
+    }
 
     return (
-        <div className="mt-16 p-6 w-full flex items-center justify-center bg-gradient-to-br px-4">
+        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4">
             <motion.div
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
-                className="w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl exam-card"
+                className="w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl bg-black/15"
+                onKeyDown={handleKeyPress}
             >
-                <div className="flex mb-6 transition-all text-sm sm:text-base">
+                <div className="flex mb-6 text-sm sm:text-base">
                     <button
                         className={`flex-1 py-2 font-semibold rounded-l-xl transition-all duration-300 ${mod === 'giris'
                             ? 'login-button shadow-md scale-105'
-                            : 'button'
+                            : 'input-button'
                             }`}
                         onClick={() => setMod('giris')}
                     >
@@ -166,7 +160,7 @@ export default function GirisKaydolFormu() {
                     <button
                         className={`flex-1 py-2 font-semibold rounded-r-xl transition-all duration-300 ${mod === 'kaydol'
                             ? 'signup-button shadow-md scale-105'
-                            : 'button'
+                            : 'input-button'
                             }`}
                         onClick={() => setMod('kaydol')}
                     >
@@ -206,7 +200,7 @@ export default function GirisKaydolFormu() {
                     <FloatingInput
                         id="sifre"
                         type="password"
-                        label="Şifre"
+                        label="Şifre (en az 6 karakter)"
                         value={sifre}
                         onChange={(e) => setSifre(e.target.value)}
                     />

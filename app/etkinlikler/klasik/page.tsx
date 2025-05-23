@@ -211,7 +211,11 @@ export default function Sinav() {
 
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
-            isChecked ? sonraki() : kontrolEt();
+            if (normalize(cevap.trim()) === 'pas') {
+                pasGec();
+            } else {
+                isChecked ? sonraki() : kontrolEt();
+            }
         }
     };
 

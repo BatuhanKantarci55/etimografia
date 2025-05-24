@@ -1,12 +1,12 @@
 'use client';
 
-import avatar10right from './resim/avatar10right.png';
-import avatar11left from './resim/avatar11left.png';
+import avatar10rightnew from './resim/avatar10rightnew.png';
+import avatar11leftnew from './resim/avatar11leftnew.png';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, X, Clock } from 'lucide-react';
+import { X, Clock } from 'lucide-react';
 import { playCorrectSound, playWrongSound, playComboSound, playFireworksSound } from '@/utils/sounds';
 import { puanGuncelle } from '@/lib/puan';
 
@@ -43,7 +43,6 @@ export default function Sinav() {
     const [yanlisSayisi, setYanlisSayisi] = useState(0);
     const [pasHakki, setPasHakki] = useState(5);
     const [comboAktif, setComboAktif] = useState(false);
-
 
     const timerRef = useRef<number>(0);
     const inputRef = useRef<HTMLInputElement>(null);
@@ -222,7 +221,7 @@ export default function Sinav() {
     if (bitti) {
         puanGuncelle(puan);
         return (
-            <div className="mt-16 p-6 flex items-center justify-center">
+            <div className="mt-16 p-6 pb-32 md:pb-0 flex items-center justify-center min-h-[calc(100vh-200px)]">
                 <motion.div
                     initial={{ opacity: 0 }} animate={{ opacity: 1 }}
                     className="max-w-md w-full p-6 rounded-2xl shadow-md space-y-4 exam-card"
@@ -245,7 +244,7 @@ export default function Sinav() {
 
     if (!basladi) {
         return (
-            <div className="mt-10 p-6 flex items-center justify-center">
+            <div className="p-8 flex items-center justify-center min-h-[calc(100vh-200px)]">
                 <motion.div
                     initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.3 }}
@@ -256,20 +255,18 @@ export default function Sinav() {
                     {/* Ayar butonları buraya gelecek */}
                     <div>
                         <p className="font-semibold mb-2">Yön:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
                             <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 onClick={() => setYon('eski')}
                                 className={`cursor-pointer p-4 border rounded-2xl text-center transition-colors duration-200 ${yon === 'eski' ? 'chosen-button' : 'button'}`}
-                            >
-                                <ArrowRightLeft className="inline-block mr-2" />Eski → Yeni
+                            >Eski → Yeni
                             </motion.button>
                             <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 onClick={() => setYon('yeni')}
                                 className={`cursor-pointer p-4 border rounded-2xl text-center transition-colors duration-200 ${yon === 'yeni' ? 'chosen-button' : 'button'}`}
-                            >
-                                <ArrowRightLeft className="inline-block mr-2 rotate-180" />Yeni → Eski
+                            >Yeni → Eski
                             </motion.button>
                         </div>
                     </div>
@@ -300,12 +297,12 @@ export default function Sinav() {
     }
 
     const soru = soruListesi[indeks];
-    if (!soru) return <div className="mt-16 text-center">Sorular yükleniyor...</div>;
+    if (!soru) return <div className="mt-16 text-center pb-32 md:pb-0">Sorular yükleniyor...</div>;
 
     const toplamPuan = soru.zorluk * 5 + (comboAktif ? 5 : 0);
 
     return (
-        <div className="mt-6 flex flex-col items-center">
+        <div className="md:mt-4 flex flex-col items-center pb-[180px] md:pb-0 min-h-screen">
             {/* Üst bar: Sayaç, 5 kutucuk, çıkış */}
             <div className="flex items-center justify-between w-full max-w-4xl mb-6 px-4 gap-4 flex-wrap sm:flex-nowrap">
                 {/* Sayaç */}
@@ -318,8 +315,8 @@ export default function Sinav() {
                 <div className="relative flex flex-1 justify-center max-w-full">
                     {/* Kombo Yazısı */}
                     {streak >= 5 && (
-                        <div className="absolute -top-8 sm:-top-0 text-gray-900 text-sm sm:text-lg font-bold animate-pulse z-10">
-                            🔥 KOMBO MODU! +5 bonus puan 🔥
+                        <div className="absolute top-1 sm:-top-0 md:top-0 text-red-700 text-sm sm:text-lg font-bold animate-pulse z-10">
+                            KOMBO MODU! +5 bonus puan
                         </div>
                     )}
 
@@ -352,7 +349,7 @@ export default function Sinav() {
             </div>
 
             {/* Başlık */}
-            <h2 className="text-3xl mb-4">{yon === 'eski' ? 'Yeni Türkçe karşılığını yaz' : 'Eski Türkçe karşılığını yaz'}</h2>
+            <h2 className="text-2xl md:text-3xl mb-4 text-center px-4">{yon === 'eski' ? 'Yeni Türkçe karşılığını yaz' : 'Eski Türkçe karşılığını yaz'}</h2>
 
             {/* Toplam puan göstergesi */}
             <div className="mb-2 text-lg font-semibold">
@@ -360,30 +357,30 @@ export default function Sinav() {
             </div>
 
             {/* Soru bölümü */}
-            <div className="w-full max-w-2xl h-68 relative mb-6 pt-12">
+            <div className="w-full max-w-2xl h-68 relative mb-6 pt-12 px-4">
                 {/* Sol üst (konuşma yukarıda değil, maskot hizasında) */}
                 <div className="absolute -top-5 left-0 flex items-center space-x-2">
-                    <Image src={avatar10right} alt="maskot sol" width={160} height={160} />
+                    <Image src={avatar10rightnew} alt="maskot sol" width={120} height={120} />
                     <div className="px-3 py-2 max-w-xs left-exam-box">
                         {yon === 'eski' ? soru.eski : soru.yeni}
                     </div>
                 </div>
 
                 {/* Sağ alt (konuşma balonu çok aşağıda değil, maskot hizasında) */}
-                <div className="absolute -bottom-1 right-0 flex items-center space-x-2">
-                    <div className="px-3 py-2 max-w-xs right-exam-box">
+                <div className="absolute -bottom-5 right-0 flex items-center space-x-2">
+                    <div className="px-2 py-2 max-w-xs right-exam-box">
                         <input
                             ref={inputRef}
                             type="text"
                             value={cevap}
                             onChange={e => setCevap(e.target.value)}
                             onKeyDown={handleKeyDown}
-                            className="bg-transparent focus:outline-none w-full max-w-[150px]"
-                            placeholder="Cevabınızı yaz"
+                            className="pl-2 bg-transparent focus:outline-none w-full max-w-[130px]"
+                            placeholder="Cevabı yazınız"
                             readOnly={isChecked}
                         />
                     </div>
-                    <Image src={avatar11left} alt="maskot sağ" width={160} height={160} />
+                    <Image src={avatar11leftnew} alt="maskot sağ" width={120} height={120} />
                 </div>
             </div>
 
@@ -391,53 +388,45 @@ export default function Sinav() {
 
             {/* Alt bar */}
             <div
-                className={`w-full fixed bottom-0 left-0 z-10 shadow-lg h-32
-        ${sonuc === 'yanlis' ? 'wrong-navbar' : sonuc === 'dogru' ? 'right-navbar' : 'exam-navbar'}`}
+                className={`w-full fixed bottom-16 left-0 z-10 shadow-lg h-20 md:h-32 md:bottom-0
+    ${sonuc === 'yanlis' ? 'wrong-navbar' : sonuc === 'dogru' ? 'right-navbar' : 'exam-navbar'}`}
             >
-                <div className="max-w-4xl mx-auto px-4 py-4 flex flex-col sm:flex-row items-center justify-between gap-4 h-full">
+                <div className="max-w-4xl mx-auto px-4 py-2 h-full flex flex-row items-center justify-between gap-2 overflow-x-auto">
                     {/* Sol - Puan */}
-                    <div className="w-full sm:w-auto flex items-center justify-center sm:justify-start h-full">
-                        <div className="font-bold text-xl">
-                            ⭐ {soru.zorluk * 5} puan
-                        </div>
+                    <div className="font-bold text-lg whitespace-nowrap">
+                        ⭐ {soru.zorluk * 5} puan
                     </div>
 
                     {/* Orta mesaj alanı */}
-                    <div className="flex-1 text-center text-base sm:text-lg flex items-center justify-center h-full">
-                        {sonuc === 'dogru' && <span>
-                            Doğru! +{toplamPuan} puan
-                        </span>}
+                    <div className="text-base md:text-lg whitespace-nowrap px-2 flex-1 text-center">
+                        {sonuc === 'dogru' && <span>Doğru! +{toplamPuan} puan</span>}
                         {sonuc === 'yanlis' && (
-                            <span>Yanlış! Doğrusu: <span className="underline">{yon === 'eski' ? soru.yeni : soru.eski}</span></span>
+                            <span>Yanlış: <span className="underline">{yon === 'eski' ? soru.yeni : soru.eski}</span></span>
                         )}
                     </div>
 
                     {/* Sağ butonlar */}
-                    <div className="flex space-x-3 w-full sm:w-auto justify-center sm:justify-end items-center h-full">
+                    <div className="flex flex-row gap-2 whitespace-nowrap">
                         {!sonuc && (
                             <button
                                 onClick={pasGec}
                                 disabled={pasHakki <= 0}
-                                className="px-6 py-3 text-base font-semibold rounded-full pas-button disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="px-5 py-4 md:px-5 md:py-3 text-base md:text-base font-semibold rounded-full pas-button disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 Pas ({pasHakki})
                             </button>
                         )}
                         <button
                             onClick={sonuc ? sonraki : kontrolEt}
-                            className={`px-6 py-3 text-base font-semibold rounded-full control-button
-        ${sonuc === 'dogru' ? 'dogru' : ''}
-        ${sonuc === 'yanlis' ? 'yanlis' : ''}`}
+                            className={`px-5 py-4 md:px-5 md:py-3 text-base md:text-base font-semibold rounded-full control-button
+          ${sonuc === 'dogru' ? 'dogru' : ''}
+          ${sonuc === 'yanlis' ? 'yanlis' : ''}`}
                         >
                             {sonuc ? 'Sonraki' : 'Kontrol Et'}
                         </button>
                     </div>
                 </div>
-
             </div>
-
-
-
         </div>
     );
 }

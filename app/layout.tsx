@@ -24,7 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`${nunito.className} bg-white text-black dark:bg-black dark:text-white`}>
         <SupabaseProvider>
           <NavBar />
-          <main className="pt-20">{children}</main>
+          <main className="pt-20 pb-16 md:pb-0">{children}</main>
         </SupabaseProvider>
       </body>
     </html>

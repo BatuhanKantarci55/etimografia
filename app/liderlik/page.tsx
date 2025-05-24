@@ -29,7 +29,7 @@ export default function LiderlikSayfasi() {
                 .from('profiles')
                 .select('id, username, avatar, total_score')
                 .order('total_score', { ascending: false })
-                .limit(20)
+                .limit(30)
 
             if (error) {
                 console.error('Liderlik verileri alınamadı:', error)

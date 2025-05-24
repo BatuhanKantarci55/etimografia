@@ -10,7 +10,7 @@ const FloatingInput = ({ id, type, label, value, onChange }: any) => {
     const yukariCik = focused || value.length > 0
 
     return (
-        <div className="relative w-full">
+        <div className="relative w-full ">
             <input
                 id={id}
                 type={type}
@@ -139,7 +139,7 @@ export default function GirisKaydolFormu() {
     }
 
     return (
-        <div className="min-h-[calc(100vh-80px)] flex items-center justify-center px-4">
+        <div className=" min-h-[calc(100vh-200px)] flex items-center justify-center px-4">
             <motion.div
                 initial={{ opacity: 0, y: 40 }}
                 animate={{ opacity: 1, y: 0 }}

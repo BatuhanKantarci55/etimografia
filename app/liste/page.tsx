@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
+import { Star } from 'lucide-react'; // Import the Star icon from lucide-react
 
 type Kelime = {
     eski: string;
@@ -162,7 +163,13 @@ export default function Liste() {
                                 : 'list-button'
                                 }`}
                         >
-                            {z === 0 ? 'Tümü' : '⭐'.repeat(z)}
+                            {z === 0 ? 'Tümü' : (
+                                <div className="flex gap-1">
+                                    {Array(z).fill(0).map((_, i) => (
+                                        <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
+                                    ))}
+                                </div>
+                            )}
                         </button>
                     ))}
                 </div>
@@ -222,7 +229,13 @@ export default function Liste() {
                                             {k.kokYeni}
                                         </span>
                                     </td>
-                                    <td className="px-4 py-2">{'⭐'.repeat(k.zorluk)}</td>
+                                    <td className="px-4 py-2">
+                                        <div className="flex justify-center gap-1">
+                                            {Array(k.zorluk).fill(0).map((_, i) => (
+                                                <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
+                                            ))}
+                                        </div>
+                                    </td>
                                 </tr>
                             ))}
                         </tbody>

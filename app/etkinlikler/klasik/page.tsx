@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { X, Clock } from 'lucide-react';
+import { X, Clock, Star } from 'lucide-react';
 import { playCorrectSound, playWrongSound, playComboSound, playFireworksSound } from '@/utils/sounds';
 import { puanGuncelle } from '@/lib/puan';
 
@@ -279,7 +279,15 @@ export default function Sinav() {
                                     key={z}
                                     onClick={() => setZorluk(z)}
                                     className={`cursor-pointer p-3 border rounded-full text-center transition-colors duration-200 ${zorluk === z ? 'chosen-button' : 'button'}`}
-                                >{z === 'karisik' ? 'Karışık' : '⭐'.repeat(z)}</motion.button>
+                                >
+                                    {z === 'karisik' ? 'Karışık' : (
+                                        <div className="flex justify-center gap-1">
+                                            {Array(z).fill(0).map((_, i) => (
+                                                <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
+                                            ))}
+                                        </div>
+                                    )}
+                                </motion.button>
                             ))}
                         </div>
                     </div>
@@ -352,8 +360,9 @@ export default function Sinav() {
             <h2 className="text-2xl md:text-3xl mb-4 text-center px-4">{yon === 'eski' ? 'Yeni Türkçe karşılığını yaz' : 'Eski Türkçe karşılığını yaz'}</h2>
 
             {/* Toplam puan göstergesi */}
-            <div className="mb-2 text-lg font-semibold">
-                ⭐ Toplam Puan: {puan}
+            <div className="mb-2 text-lg font-semibold flex items-center gap-1">
+                <Star className="w-5 h-5 fill-current text-yellow-500" />
+                Toplam Puan: {puan}
             </div>
 
             {/* Soru bölümü */}
@@ -394,7 +403,10 @@ export default function Sinav() {
                 <div className="max-w-4xl mx-auto px-4 py-2 h-full flex flex-row items-center justify-between gap-2 overflow-x-auto">
                     {/* Sol - Puan */}
                     <div className="font-bold text-lg whitespace-nowrap">
-                        ⭐ {soru.zorluk * 5} puan
+                        <div className="flex items-center gap-1">
+                            <Star className="w-4 h-4 fill-current text-yellow-500" />
+                            {soru.zorluk * 5} puan
+                        </div>
                     </div>
 
                     {/* Orta mesaj alanı */}

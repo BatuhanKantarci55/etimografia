@@ -28,6 +28,21 @@ const getKokClass = (kok: string) => {
     }
 };
 
+const getShortKok = (kok: string) => {
+    switch (kok?.toLowerCase()) {
+        case 'arapça':
+            return 'ar.';
+        case 'farsça':
+            return 'fa.';
+        case 'fransızca':
+            return 'fr.';
+        case 'türkçe':
+            return 'tü.';
+        default:
+            return kok;
+    }
+};
+
 export default function Liste() {
     const supabase = createBrowserClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -163,12 +178,20 @@ export default function Liste() {
                                 : 'list-button'
                                 }`}
                         >
-                            {z === 0 ? 'Tümü' : (
-                                <div className="flex gap-1">
-                                    {Array(z).fill(0).map((_, i) => (
-                                        <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
-                                    ))}
-                                </div>
+                            {z === 0 ? (
+                                'Tümü'
+                            ) : (
+                                <>
+                                    <div className="hidden md:flex gap-1">
+                                        {Array(z).fill(0).map((_, i) => (
+                                            <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
+                                        ))}
+                                    </div>
+                                    <div className="flex items-center gap-1 md:hidden">
+                                        <span className="text-yellow-500 font-medium">{z}</span>
+                                        <Star className="w-4 h-4 fill-current text-yellow-500" />
+                                    </div>
+                                </>
                             )}
                         </button>
                     ))}
@@ -192,22 +215,22 @@ export default function Liste() {
                     <table className="w-full text-sm md:text-base text-center table-auto border-collapse">
                         <thead>
                             <tr>
-                                <th className="px-4 py-3">#</th>
+                                <th className="md:px-4 py-3">#</th>
                                 <th
-                                    className="px-4 py-3 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                                    className="md:px-4 py-3 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition"
                                     onClick={() => toggleSort('eski')}
                                 >
                                     Eski Türkçe {sortField === 'eski' ? (sortAsc ? '▼' : '▲') : ''}
                                 </th>
-                                <th className="px-4 py-3">Eski Köken</th>
+                                <th className="md:px-4 py-3">Eski Köken</th>
                                 <th
-                                    className="px-4 py-3 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition"
+                                    className="md:px-4 py-3 cursor-pointer hover:bg-gray-300 dark:hover:bg-gray-600 transition"
                                     onClick={() => toggleSort('yeni')}
                                 >
                                     Yeni Türkçe {sortField === 'yeni' ? (sortAsc ? '▼' : '▲') : ''}
                                 </th>
-                                <th className="px-4 py-3">Yeni Köken</th>
-                                <th className="px-4 py-3">Zorluk</th>
+                                <th className="md:px-4 py-3">Yeni Köken</th>
+                                <th className="md:px-4 py-3">Zorluk</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -216,24 +239,30 @@ export default function Liste() {
                                     key={i}
                                     className="hover:bg-blue-100 dark:hover:bg-gray-700 transition-all"
                                 >
-                                    <td className="px-4 py-2">{i + 1}</td>
-                                    <td className="px-4 py-2">{k.eski}</td>
-                                    <td className="px-4 py-2">
+                                    <td className="md:px-4 py-2">{i + 1}</td>
+                                    <td className="md:px-4 py-2">{k.eski}</td>
+                                    <td className="md:px-4 py-2">
                                         <span className={`inline-block rounded px-2 py-1 text-sm font-medium ${getKokClass(k.kokEski)}`}>
-                                            {k.kokEski}
+                                            <span className="hidden md:inline">{k.kokEski}</span>
+                                            <span className="md:hidden">{getShortKok(k.kokEski)}</span>
                                         </span>
                                     </td>
-                                    <td className="px-4 py-2">{k.yeni}</td>
-                                    <td className="px-4 py-2">
+                                    <td className="md:px-4 py-2">{k.yeni}</td>
+                                    <td className="md:px-4 py-2">
                                         <span className={`inline-block rounded px-2 py-1 text-sm font-medium ${getKokClass(k.kokYeni)}`}>
-                                            {k.kokYeni}
+                                            <span className="hidden md:inline">{k.kokYeni}</span>
+                                            <span className="md:hidden">{getShortKok(k.kokYeni)}</span>
                                         </span>
                                     </td>
-                                    <td className="px-4 py-2">
-                                        <div className="flex justify-center gap-1">
+                                    <td className="md:px-4 py-2">
+                                        <div className="hidden md:flex justify-center gap-1">
                                             {Array(k.zorluk).fill(0).map((_, i) => (
                                                 <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
                                             ))}
+                                        </div>
+                                        <div className="flex items-center justify-center gap-1 md:hidden">
+                                            <span className="text-yellow-500 font-medium">{k.zorluk}</span>
+                                            <Star className="w-4 h-4 fill-current text-yellow-500" />
                                         </div>
                                     </td>
                                 </tr>

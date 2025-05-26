@@ -24,9 +24,9 @@ const etkinlikler = [
         icon: <PuzzlePieceIcon className="h-8 w-8 text-indigo-500" />,
     },
     {
-        title: 'Günlük Etkinlik (YAKINDA)',
+        title: 'Günlük Etkinlik (TEST)',
         description: 'Her gün yenilenen özel bir soru seni bekliyor!',
-        href: '/etkinlikler/gunluk',
+        href: '/etkinlikler/gunluk-etkinlik',
         icon: <CalendarIcon className="h-8 w-8 text-indigo-500" />,
     },
     {

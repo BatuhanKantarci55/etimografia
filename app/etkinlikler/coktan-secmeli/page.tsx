@@ -363,7 +363,7 @@ export default function SecimliSinav() {
                 </div>
 
                 {streak >= 5 && (
-                    <div className="absolute top-17 pl-14 md:top-23 md:pl-14 text-red-700 text-lg font-bold animate-pulse z-10">
+                    <div className="absolute top-25 pl-10 md:top-23 md:pl-14 text-red-700 text-lg font-bold animate-pulse z-10">
                         KOMBO MODU! +2 bonus puan
                     </div>
                 )}

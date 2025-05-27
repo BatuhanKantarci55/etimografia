@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { ArrowRightLeft, X } from 'lucide-react';
+import { Star, X } from 'lucide-react';
 import { playCorrectSound, playWrongSound, playComboSound, playFireworksSound } from '@/utils/sounds';
 import { puanGuncelle } from '@/lib/puan';
 
@@ -288,25 +288,29 @@ export default function SecimliSinav() {
 
     if (!basladi) {
         return (
-            <div className="mt-10 p-6 flex items-center justify-center">
-                <motion.div className="max-w-md w-full p-6 rounded-2xl shadow-md space-y-6 exam-card">
+            <div className="p-8 flex items-center justify-center min-h-[calc(100vh-200px)]">
+                <motion.div
+                    initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3 }}
+                    className="max-w-md w-full p-6 rounded-2xl shadow-md space-y-6 exam-card"
+                >
                     <h1 className="text-center text-2xl font-bold">Çoktan Seçmeli Sınav Ayarları</h1>
+
+                    {/* Ayar butonları buraya gelecek */}
                     <div>
                         <p className="font-semibold mb-2">Yön:</p>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
                             <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 onClick={() => setYon('eski')}
                                 className={`cursor-pointer p-4 border rounded-2xl text-center transition-colors duration-200 ${yon === 'eski' ? 'chosen-button' : 'button'}`}
-                            >
-                                <ArrowRightLeft className="inline-block mr-2" />Eski → Yeni
+                            >Eski → Yeni
                             </motion.button>
                             <motion.button
                                 whileHover={{ scale: 1.03 }}
                                 onClick={() => setYon('yeni')}
                                 className={`cursor-pointer p-4 border rounded-2xl text-center transition-colors duration-200 ${yon === 'yeni' ? 'chosen-button' : 'button'}`}
-                            >
-                                <ArrowRightLeft className="inline-block mr-2 rotate-180" />Yeni → Eski
+                            >Yeni → Eski
                             </motion.button>
                         </div>
                     </div>
@@ -320,7 +324,13 @@ export default function SecimliSinav() {
                                     onClick={() => setZorluk(z)}
                                     className={`cursor-pointer p-3 border rounded-full text-center transition-colors duration-200 ${zorluk === z ? 'chosen-button' : 'button'}`}
                                 >
-                                    {z === 'karisik' ? 'Karışık' : '⭐'.repeat(z)}
+                                    {z === 'karisik' ? 'Karışık' : (
+                                        <div className="flex justify-center gap-1">
+                                            {Array(z).fill(0).map((_, i) => (
+                                                <Star key={i} className="w-4 h-4 fill-current text-yellow-500" />
+                                            ))}
+                                        </div>
+                                    )}
                                 </motion.button>
                             ))}
                         </div>
@@ -328,6 +338,7 @@ export default function SecimliSinav() {
                     <motion.button
                         whileHover={{ scale: 1.03 }}
                         onClick={baslat}
+                        disabled={!yon || !zorluk}
                         className="w-full cursor-pointer p-3 border rounded-full chosen-button"
                     >
                         Sınava Başla
@@ -341,8 +352,8 @@ export default function SecimliSinav() {
     if (!soru) return <div className="mt-16 p-6 text-center">Sorular yükleniyor...</div>;
 
     return (
-        <div className="mt-16 p-6 flex items-center justify-center relative">
-            <button onClick={cikisOnayi} className="absolute top-4 right-4 p-1 rounded-full exam-card shadow">
+        <div className="md:mt-16 md:p-6 px-6 flex items-center justify-center relative">
+            <button onClick={cikisOnayi} className="absolute -top-2 md:top-4 right-4 p-1 rounded-full exam-card2 shadow">
                 <X size={20} />
             </button>
             <motion.div className="max-w-md w-full p-6 rounded-2xl shadow-md space-y-6 exam-card">
@@ -352,8 +363,8 @@ export default function SecimliSinav() {
                 </div>
 
                 {streak >= 5 && (
-                    <div className="absolute -top-8 sm:-top-0 text-gray-600 text-sm sm:text-lg font-bold animate-pulse ">
-                        🔥 KOMBO MODU! +2 bonus puan 🔥
+                    <div className="absolute top-17 pl-14 md:top-23 md:pl-14 text-red-700 text-lg font-bold animate-pulse z-10">
+                        KOMBO MODU! +2 bonus puan
                     </div>
                 )}
 
@@ -394,7 +405,9 @@ export default function SecimliSinav() {
                                 ? sonuc === 'dogru'
                                     ? 'right-option-card'
                                     : 'wrong-option-card'
-                                : 'button'
+                                : secim === soru.dogruCevap && cevap !== null && sonuc === 'yanlis'
+                                    ? 'right-option-card' // Doğru cevabı yeşil yap
+                                    : 'button'
                                 }`}
                         >
                             {secim}

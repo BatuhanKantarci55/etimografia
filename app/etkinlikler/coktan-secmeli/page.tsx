@@ -352,7 +352,7 @@ export default function SecimliSinav() {
     if (!soru) return <div className="mt-16 p-6 text-center">Sorular yükleniyor...</div>;
 
     return (
-        <div className="md:mt-16 md:p-6 px-6 flex items-center justify-center relative">
+        <div className="md:mt-16 p-6 flex items-center justify-center relative">
             <button onClick={cikisOnayi} className="absolute -top-2 md:top-4 right-4 p-1 rounded-full exam-card2 shadow">
                 <X size={20} />
             </button>

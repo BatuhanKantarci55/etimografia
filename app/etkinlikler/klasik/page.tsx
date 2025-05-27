@@ -151,13 +151,32 @@ export default function Sinav() {
         const soru = soruListesi[indeks];
         if (!soru) return;
         const dogruCevap = yon === 'eski' ? soru.yeni : soru.eski;
-        const dogruMu = normalize(cevap.trim()) === normalize(dogruCevap);
+
+        // Normalize edilmiş cevaplar
+        const normCevap = normalize(cevap.trim());
+        const normDogru = normalize(dogruCevap);
+
+        // Harf sayısı kontrolü
+        const harfSayisiAyni = normCevap.length === normDogru.length;
+
+        // Harf hatası toleransı (1 harf farkına izin ver)
+        let harfHatasiVar = false;
+        if (harfSayisiAyni) {
+            let hataSayisi = 0;
+            for (let i = 0; i < normDogru.length; i++) {
+                if (normDogru[i] !== normCevap[i]) hataSayisi++;
+                if (hataSayisi > 1) break;
+            }
+            harfHatasiVar = hataSayisi <= 1;
+        }
+
+        const dogruMu = normCevap === normDogru || harfHatasiVar;
 
         if (dogruMu) {
             playCorrectSound();
             setSonuc('dogru');
-            const normalPuan = soru.zorluk * 5;
-            const bonus = comboAktif ? 5 : 0;
+            const normalPuan = soru.zorluk * 4;
+            const bonus = comboAktif ? 3 : 0;
             setPuan(p => p + normalPuan + bonus);
             setSure(s => s + 1);
             setDogruSayisi(d => d + 1);
@@ -176,12 +195,11 @@ export default function Sinav() {
             setPuan(p => Math.max(0, p - 5));
             setYanlisSayisi(y => y + 1);
             setStreak(0);
-            setComboAktif(false); // KOMBO BİTER
+            setComboAktif(false);
         }
 
         setIsChecked(true);
     };
-
 
     const sonraki = () => {
         setIndeks(i => i + 1);
@@ -198,7 +216,6 @@ export default function Sinav() {
             sonraki();
         }
     };
-
 
     const cikisOnayi = () => {
         if (confirm('Sınavı bitirmek istediğinize emin misiniz?')) {
@@ -307,7 +324,7 @@ export default function Sinav() {
     const soru = soruListesi[indeks];
     if (!soru) return <div className="mt-16 text-center pb-32 md:pb-0">Sorular yükleniyor...</div>;
 
-    const toplamPuan = soru.zorluk * 5 + (comboAktif ? 5 : 0);
+    const toplamPuan = soru.zorluk * 4 + (comboAktif ? 3 : 0); // Zorluk puanı *5 yerine *4, kombo bonusu +5 yerine +3 olarak değiştirildi
 
     return (
         <div className="md:mt-4 flex flex-col items-center pb-[180px] md:pb-0 min-h-screen">
@@ -324,7 +341,7 @@ export default function Sinav() {
                     {/* Kombo Yazısı */}
                     {streak >= 5 && (
                         <div className="absolute top-1 sm:-top-0 md:top-0 text-red-700 text-sm sm:text-lg font-bold animate-pulse z-10">
-                            KOMBO MODU! +5 bonus puan
+                            KOMBO MODU! +3 bonus puan
                         </div>
                     )}
 
@@ -393,8 +410,6 @@ export default function Sinav() {
                 </div>
             </div>
 
-
-
             {/* Alt bar */}
             <div
                 className={`w-full fixed bottom-16 left-0 z-10 shadow-lg h-20 md:h-32 md:bottom-0
@@ -405,7 +420,7 @@ export default function Sinav() {
                     <div className="font-bold text-lg whitespace-nowrap">
                         <div className="flex items-center gap-1">
                             <Star className="w-4 h-4 fill-current text-yellow-500" />
-                            {soru.zorluk * 5} puan
+                            {soru.zorluk * 4} puan
                         </div>
                     </div>
 

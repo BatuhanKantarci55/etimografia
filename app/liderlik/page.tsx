@@ -5,18 +5,20 @@ import { supabase } from '@/lib/supabaseClient'
 import { Medal, UserCircle2 } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
-import Link from 'next/link' // ✅ Link bileşenini ekledik
+import Link from 'next/link'
 
 type Kullanici = {
     id: string
     username: string
     avatar: string
     total_score: number
+    weekly_score: number
 }
 
 export default function LiderlikSayfasi() {
     const [kullanicilar, setKullanicilar] = useState<Kullanici[]>([])
     const [kendiId, setKendiId] = useState<string | null>(null)
+    const [haftalikMod, setHaftalikMod] = useState(true) // Varsayılan olarak haftalık mod açık
 
     useEffect(() => {
         const kullaniciBilgisi = async () => {
@@ -27,8 +29,8 @@ export default function LiderlikSayfasi() {
         const verileriGetir = async () => {
             const { data, error } = await supabase
                 .from('profiles')
-                .select('id, username, avatar, total_score')
-                .order('total_score', { ascending: false })
+                .select('id, username, avatar, total_score, weekly_score')
+                .order(haftalikMod ? 'weekly_score' : 'total_score', { ascending: false })
                 .limit(30)
 
             if (error) {
@@ -41,14 +43,14 @@ export default function LiderlikSayfasi() {
 
         kullaniciBilgisi()
         verileriGetir()
-    }, [])
+    }, [haftalikMod])
 
     const arkaplanlar = ['theme-gold', 'theme-silver', 'theme-bronze']
 
     return (
         <div className="py-12 px-4">
             <motion.h1
-                className="text-4xl font-bold text-center mb-12 text-theme-title"
+                className="text-4xl font-bold text-center mb-6 text-theme-title"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
@@ -56,10 +58,28 @@ export default function LiderlikSayfasi() {
                 🏆 Liderlik Tablosu
             </motion.h1>
 
+            <div className="flex justify-center mb-8">
+                <div className="flex items-center gap-4 bg-theme-card p-2 rounded-full">
+                    <button
+                        onClick={() => setHaftalikMod(false)}
+                        className={`px-4 py-2 rounded-full transition ${!haftalikMod ? 'bg-black/30 text-white' : 'hover:bg-white/10'}`}
+                    >
+                        Tüm Zamanlar
+                    </button>
+                    <button
+                        onClick={() => setHaftalikMod(true)}
+                        className={`px-4 py-2 rounded-full transition ${haftalikMod ? 'bg-black/30 text-white' : 'hover:bg-white/10'}`}
+                    >
+                        Bu Hafta
+                    </button>
+                </div>
+            </div>
+
             <div className="max-w-4xl mx-auto space-y-6">
                 {kullanicilar.map((kullanici, index) => {
                     const isBen = kullanici.id === kendiId
                     const isIlkUc = index < 3
+                    const gosterilecekPuan = haftalikMod ? kullanici.weekly_score : kullanici.total_score
 
                     const arkaPlan = isIlkUc
                         ? `${arkaplanlar[index]} text-dark`
@@ -81,7 +101,6 @@ export default function LiderlikSayfasi() {
                                     {isIlkUc ? <Medal className="w-6 h-6" /> : <span>{index + 1}</span>}
                                 </div>
 
-                                {/* ✅ Avatarı tıklanabilir yaptık */}
                                 <Link href={`/profil/${kullanici.username}`}>
                                     <div className="relative w-16 h-16 hover:scale-105 transition-transform">
                                         <Image
@@ -104,8 +123,13 @@ export default function LiderlikSayfasi() {
                                         )}
                                     </p>
                                     <p className="text-base text-theme-subtext">
-                                        Toplam Puan: <span className="font-semibold">{kullanici.total_score}</span>
+                                        {haftalikMod ? 'Bu Hafta' : 'Toplam Puan'}: <span className="font-semibold">{gosterilecekPuan}</span>
                                     </p>
+                                    {!haftalikMod && (
+                                        <p className="text-base text-theme-subtext">
+                                            Bu Hafta: <span className="font-semibold">{kullanici.weekly_score}</span>
+                                        </p>
+                                    )}
                                 </div>
                             </div>
                         </motion.div>

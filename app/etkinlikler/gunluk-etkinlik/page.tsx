@@ -21,6 +21,7 @@ type UserAnswer = {
     isCorrect: boolean;
     hintsUsed: number;
     earnedPoints: number;
+    showHints: boolean;
 };
 
 const supabase = createBrowserClient(
@@ -44,7 +45,6 @@ export default function DailyActivity() {
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-    // Günlük soruları yükle
     useEffect(() => {
         const fetchDailyQuestions = async () => {
             try {
@@ -65,7 +65,6 @@ export default function DailyActivity() {
                     return;
                 }
 
-                // Yeni sorular çek
                 const { data: questionsData, error: questionsError } = await supabase
                     .from('daily_activity_questions')
                     .select('*')
@@ -105,7 +104,6 @@ export default function DailyActivity() {
         fetchDailyQuestions();
     }, []);
 
-    // Oyun zamanlayıcısı
     useEffect(() => {
         if (gameStatus !== 'playing') return;
 
@@ -127,7 +125,6 @@ export default function DailyActivity() {
         };
     }, [gameStatus, timeLeft]);
 
-    // Oyunu başlat
     const startGame = () => {
         setGameStatus('playing');
         setTimeLeft(100);
@@ -136,9 +133,9 @@ export default function DailyActivity() {
         setCurrentQuestionIndex(0);
         setInputValues(['']);
         setHintsUsed(0);
+        setShowHints(false);
     };
 
-    // Oyunu bitir
     const finishGame = useCallback(async () => {
         if (timerRef.current) {
             clearTimeout(timerRef.current);
@@ -186,8 +183,6 @@ export default function DailyActivity() {
         }
     }, [questions, userAnswers, score, timeLeft]);
 
-    // Cevap kontrolü
-    // Cevap kontrolü
     const checkAnswer = useCallback(() => {
         if (!questions[currentQuestionIndex]) return;
 
@@ -205,6 +200,7 @@ export default function DailyActivity() {
             isCorrect,
             hintsUsed,
             earnedPoints: isCorrect ? earnedPoints : 0,
+            showHints
         };
 
         setUserAnswers(newAnswers);
@@ -212,23 +208,20 @@ export default function DailyActivity() {
         if (isCorrect) {
             setScore(prev => prev + earnedPoints);
 
-            // Son soru mu kontrol et
             const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
             if (isLastQuestion) {
-                finishGame(); // Son soru doğru cevaplandığında oyunu bitir
+                finishGame();
             } else {
-                // Değilse sonraki soruya geç
                 const nextIndex = currentQuestionIndex + 1;
                 setCurrentQuestionIndex(nextIndex);
                 setInputValues(newAnswers[nextIndex]?.answer || ['']);
                 setHintsUsed(newAnswers[nextIndex]?.hintsUsed || 0);
-                setShowHints(false);
+                setShowHints(newAnswers[nextIndex]?.showHints || false);
             }
         }
-    }, [currentQuestionIndex, questions, inputValues, hintsUsed, userAnswers, finishGame]);
+    }, [currentQuestionIndex, questions, inputValues, hintsUsed, userAnswers, finishGame, showHints]);
 
-    // İpucu kullan
     const useHint = useCallback(() => {
         if (hintsUsed >= 3 || !questions[currentQuestionIndex]) return;
 
@@ -240,16 +233,16 @@ export default function DailyActivity() {
         let newValues = [...inputValues];
 
         switch (hintsUsed) {
-            case 0: // Harf sayısını göster
+            case 0:
                 newValues = Array(currentQuestion.cevap.length).fill('');
                 break;
-            case 1: // Baş ipucu
+            case 1:
                 const startHint = currentQuestion.ipucu_bas;
                 for (let i = 0; i < startHint.length && i < newValues.length; i++) {
                     newValues[i] = startHint[i];
                 }
                 break;
-            case 2: // Son ipucu
+            case 2:
                 const endHint = currentQuestion.ipucu_son;
                 for (let i = 0; i < endHint.length; i++) {
                     const pos = newValues.length - endHint.length + i;
@@ -263,33 +256,26 @@ export default function DailyActivity() {
         setInputValues(newValues);
     }, [currentQuestionIndex, questions, inputValues, hintsUsed]);
 
-    // Input değişikliklerini yönet
     const handleInputChange = useCallback((index: number, value: string, inputElement: HTMLInputElement) => {
         setInputValues(prev => {
             const newValues = [...prev];
 
-            // Harf ekleme
             if (value && value.length === 1) {
                 newValues[index] = value.toLowerCase();
 
-                // Yeni input ekle (eğer son kutuysa ve max uzunluk aşılmadıysa)
                 if (index === newValues.length - 1 && newValues.length < 30) {
                     newValues.push('');
-                    // Yeni eklenen inputa odaklan
                     setTimeout(() => {
                         inputRefs.current[index + 1]?.focus();
                     }, 0);
                 } else if (index < newValues.length - 1) {
-                    // Sonraki inputa otomatik geç
                     setTimeout(() => {
                         inputRefs.current[index + 1]?.focus();
                     }, 0);
                 }
             }
-            // Backspace ile harf silme
             else if (value === '' && index >= 0) {
                 newValues[index] = '';
-                // Eğer kutu boşsa ve ilk kutu değilse, önceki kutuya odaklan
                 if (index > 0 && newValues[index] === '') {
                     newValues.splice(index, 1);
                     setTimeout(() => {
@@ -302,27 +288,23 @@ export default function DailyActivity() {
         });
     }, []);
 
-    // Klavye olaylarını yönet
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
         if (e.key === 'Enter') {
             checkAnswer();
         } else if (e.key === 'Backspace' && inputValues[index] === '' && index > 0) {
-            // Önceki inputa odaklan
             inputRefs.current[index - 1]?.focus();
         }
     }, [checkAnswer, inputValues]);
 
-    // Soru değiştiğinde inputları sıfırla
     useEffect(() => {
         if (gameStatus !== 'playing') return;
 
         const currentAnswer = userAnswers[currentQuestionIndex];
         setInputValues(currentAnswer?.answer || ['']);
         setHintsUsed(currentAnswer?.hintsUsed || 0);
-        setShowHints(false);
+        setShowHints(currentAnswer?.showHints || false);
     }, [currentQuestionIndex, gameStatus, userAnswers]);
 
-    // Inputlara otomatik odaklanma
     useEffect(() => {
         if (gameStatus === 'playing' && inputRefs.current.length > 0) {
             const lastFilledIndex = inputValues.findIndex(val => val === '');
@@ -331,21 +313,18 @@ export default function DailyActivity() {
         }
     }, [inputValues, gameStatus]);
 
-    // Sonraki soruya geç
     const goToNextQuestion = useCallback(() => {
         if (currentQuestionIndex < questions.length - 1) {
             setCurrentQuestionIndex(prev => prev + 1);
         }
     }, [currentQuestionIndex, questions.length]);
 
-    // Önceki soruya dön
     const goToPreviousQuestion = useCallback(() => {
         if (currentQuestionIndex > 0) {
             setCurrentQuestionIndex(prev => prev - 1);
         }
     }, [currentQuestionIndex]);
 
-    // Soru numarasına git
     const goToQuestion = useCallback((index: number) => {
         if (index >= 0 && index < questions.length) {
             setCurrentQuestionIndex(index);
@@ -521,33 +500,48 @@ export default function DailyActivity() {
 
                 <div className="mb-6">
                     <div className="flex flex-wrap gap-2 mb-4">
-                        {inputValues.map((value, index) => (
-                            <div
-                                key={index}
-                                className={`flex items-center justify-center w-10 h-12 border-2 rounded-md ${isAnswered
-                                    ? value.toLowerCase() === currentQuestion.cevap[index]?.toLowerCase()
-                                        ? 'border-green-500 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                                        : 'border-red-500 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
-                                    : 'border-gray-300 dark:border-gray-600'
-                                    }`}
-                            >
-                                {index === 0 && !showHints && (
-                                    <span className="absolute -top-6 text-sm font-medium">
-                                        {currentQuestion.cevap[0]?.toUpperCase()}
-                                    </span>
-                                )}
+                        {!showHints ? (
+                            <div className="w-full">
                                 <input
-                                    ref={el => { inputRefs.current[index] = el; }}
+                                    ref={el => { inputRefs.current[0] = el; }}
                                     type="text"
-                                    value={value}
-                                    onChange={(e) => handleInputChange(index, e.target.value, e.target)}
-                                    onKeyDown={(e) => handleKeyDown(e, index)}
-                                    maxLength={1}
+                                    value={inputValues[0] || ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        setInputValues([value.toLowerCase()]);
+                                    }}
+                                    onKeyDown={(e) => {
+                                        if (e.key === 'Enter') checkAnswer();
+                                    }}
                                     disabled={isAnswered}
-                                    className="w-full h-full text-center font-medium text-lg bg-transparent focus:outline-none uppercase"
+                                    className="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-md font-medium text-lg bg-transparent focus:outline-none"
+                                    placeholder="Cevabınızı yazın..."
                                 />
                             </div>
-                        ))}
+                        ) : (
+                            inputValues.map((value, index) => (
+                                <div
+                                    key={index}
+                                    className={`flex items-center justify-center w-10 h-12 border-2 rounded-md ${isAnswered
+                                        ? value.toLowerCase() === currentQuestion.cevap[index]?.toLowerCase()
+                                            ? 'border-green-500 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                                            : 'border-red-500 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                                        : 'border-gray-300 dark:border-gray-600'
+                                        }`}
+                                >
+                                    <input
+                                        ref={el => { inputRefs.current[index] = el; }}
+                                        type="text"
+                                        value={value}
+                                        onChange={(e) => handleInputChange(index, e.target.value, e.target)}
+                                        onKeyDown={(e) => handleKeyDown(e, index)}
+                                        maxLength={1}
+                                        disabled={isAnswered}
+                                        className="w-full h-full text-center font-medium text-lg bg-transparent focus:outline-none uppercase"
+                                    />
+                                </div>
+                            ))
+                        )}
                     </div>
 
                     {showHints && hintsUsed === 1 && (

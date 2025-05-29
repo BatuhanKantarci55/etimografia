@@ -192,43 +192,73 @@ const NavBar = () => {
         setShowSuggestions(true);
     };
 
+    // Değiştirilmiş onSelectSuggestion fonksiyonu
     const onSelectSuggestion = (username: string) => {
-        clearSearch();
         router.push(`/profil/${username}`);
+        clearSearch();
     };
 
+    // Değiştirilmiş handleKeyDown fonksiyonu
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-        if (!showSuggestions || searchResults.length === 0) return;
-
-        // Arrow down
-        if (e.key === 'ArrowDown') {
+        if (e.key === 'Enter') {
             e.preventDefault();
-            setActiveSuggestionIndex(prev =>
-                prev < searchResults.length - 1 ? prev + 1 : prev
-            );
-        }
-        // Arrow up
-        else if (e.key === 'ArrowUp') {
-            e.preventDefault();
-            setActiveSuggestionIndex(prev =>
-                prev > 0 ? prev - 1 : -1
-            );
-        }
-        // Enter
-        else if (e.key === 'Enter') {
-            e.preventDefault();
+            // Eğer aktif bir öneri seçiliyse onu kullan
             if (activeSuggestionIndex >= 0 && activeSuggestionIndex < searchResults.length) {
                 onSelectSuggestion(searchResults[activeSuggestionIndex].username);
-            } else if (searchTerm.trim().length > 0) {
+            }
+            // Yoksa doğrudan yazılan kullanıcı adına gitmeyi dene
+            else if (searchTerm.trim().length > 0) {
+                onSelectSuggestion(searchTerm.trim());
+            }
+        }
+        // Diğer tuş işlemleri (ok tuşları vs.)
+        else if (showSuggestions && searchResults.length > 0) {
+            // Arrow down
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setActiveSuggestionIndex(prev =>
+                    prev < searchResults.length - 1 ? prev + 1 : prev
+                );
+            }
+            // Arrow up
+            else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setActiveSuggestionIndex(prev =>
+                    prev > 0 ? prev - 1 : -1
+                );
+            }
+            // Escape
+            else if (e.key === 'Escape') {
+                clearSearch();
                 searchInputRef.current?.blur();
             }
         }
-        // Escape
-        else if (e.key === 'Escape') {
-            clearSearch();
-            searchInputRef.current?.blur();
-        }
     };
+
+    // Değiştirilmiş öneri listesi render kısmı
+    {
+        showSuggestions && searchResults.length > 0 && (
+            <ul
+                ref={suggestionsRef}
+                className="absolute bg-white text-black w-full rounded-xl shadow-lg mt-1 max-h-48 overflow-auto z-50"
+            >
+                {searchResults.map((user, index) => (
+                    <li
+                        key={user.id}
+                        className={`px-4 py-2 cursor-pointer hover:bg-indigo-100 ${index === activeSuggestionIndex ? 'bg-indigo-100' : ''
+                            }`}
+                        onClick={(e) => {
+                            e.preventDefault();
+                            onSelectSuggestion(user.username);
+                        }}
+                        onMouseEnter={() => setActiveSuggestionIndex(index)}
+                    >
+                        @{user.username}
+                    </li>
+                ))}
+            </ul>
+        )
+    }
 
     useEffect(() => {
         if (activeSuggestionIndex >= 0 && suggestionsRef.current) {
@@ -286,7 +316,10 @@ const NavBar = () => {
                                             key={user.id}
                                             className={`px-4 py-2 cursor-pointer hover:bg-indigo-100 ${index === activeSuggestionIndex ? 'bg-indigo-100' : ''
                                                 }`}
-                                            onClick={() => onSelectSuggestion(user.username)}
+                                            onMouseDown={(e) => {
+                                                e.preventDefault();
+                                                onSelectSuggestion(user.username);
+                                            }}
                                             onMouseEnter={() => setActiveSuggestionIndex(index)}
                                         >
                                             @{user.username}

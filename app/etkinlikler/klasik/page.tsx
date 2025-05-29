@@ -6,7 +6,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { X, Clock, Star } from 'lucide-react';
+import { X, Clock, Star, Volume2, VolumeX } from 'lucide-react';
 import { playCorrectSound, playWrongSound, playComboSound, playFireworksSound } from '@/utils/sounds';
 import { puanGuncelle } from '@/lib/puan';
 
@@ -29,6 +29,7 @@ export default function Sinav() {
     const [zorluk, setZorluk] = useState<ZorlukSecim>('karisik');
     const [basladi, setBasladi] = useState(false);
     const [bitti, setBitti] = useState(false);
+    const [sesAcik, setSesAcik] = useState(true); // Yeni eklenen ses durumu state'i
 
     const [soruListesi, setSoruListesi] = useState<Kelime[]>([]);
     const [indeks, setIndeks] = useState(0);
@@ -48,6 +49,13 @@ export default function Sinav() {
     const inputRef = useRef<HTMLInputElement>(null);
 
     const shuffle = <T,>(array: T[]) => array.sort(() => Math.random() - 0.5);
+
+    // Ses çalma fonksiyonlarını sarmalayan yardımcı fonksiyon
+    const playSound = (soundFunction: () => void) => {
+        if (sesAcik) {
+            soundFunction();
+        }
+    };
 
     const fetchKelimeler = useCallback(async () => {
         try {
@@ -124,7 +132,7 @@ export default function Sinav() {
         timerRef.current = window.setInterval(() => {
             setSure(prev => {
                 if (prev <= 1) {
-                    playFireworksSound();
+                    playSound(playFireworksSound);
                     clearInterval(timerRef.current!);
                     setBitti(true);
                     setBasladi(false);
@@ -134,7 +142,7 @@ export default function Sinav() {
             });
         }, 1000);
         return () => clearInterval(timerRef.current!);
-    }, [basladi]);
+    }, [basladi, sesAcik]);
 
     useEffect(() => {
         inputRef.current?.focus();
@@ -173,7 +181,7 @@ export default function Sinav() {
         const dogruMu = normCevap === normDogru || harfHatasiVar;
 
         if (dogruMu) {
-            playCorrectSound();
+            playSound(playCorrectSound);
             setSonuc('dogru');
             const normalPuan = soru.zorluk * 4;
             const bonus = comboAktif ? 3 : 0;
@@ -184,13 +192,13 @@ export default function Sinav() {
             setStreak(s => {
                 const yeniStreak = s + 1;
                 if (yeniStreak >= 5 && !comboAktif) {
-                    playComboSound();
+                    playSound(playComboSound);
                     setComboAktif(true);
                 }
                 return Math.min(5, yeniStreak);
             });
         } else {
-            playWrongSound();
+            playSound(playWrongSound);
             setSonuc('yanlis');
             setPuan(p => Math.max(0, p - 5));
             setYanlisSayisi(y => y + 1);
@@ -268,6 +276,17 @@ export default function Sinav() {
                     className="max-w-md w-full p-6 rounded-2xl shadow-md space-y-6 exam-card"
                 >
                     <h1 className="text-center text-2xl font-bold">Klasik Sınav Ayarları</h1>
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setSesAcik(!sesAcik)}
+                            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            title={sesAcik ? "Sesleri Kapat" : "Sesleri Aç"}
+                        >
+                            {sesAcik ? <Volume2 size={30} /> : <VolumeX size={30} />}
+                        </button>
+                    </div>
+
+
 
                     {/* Ayar butonları buraya gelecek */}
                     <div>
@@ -324,7 +343,7 @@ export default function Sinav() {
     const soru = soruListesi[indeks];
     if (!soru) return <div className="mt-16 text-center pb-32 md:pb-0">Sorular yükleniyor...</div>;
 
-    const toplamPuan = soru.zorluk * 4 + (comboAktif ? 3 : 0); // Zorluk puanı *5 yerine *4, kombo bonusu +5 yerine +3 olarak değiştirildi
+    const toplamPuan = soru.zorluk * 4 + (comboAktif ? 3 : 0);
 
     return (
         <div className="md:mt-4 flex flex-col items-center pb-[180px] md:pb-0 min-h-screen">
@@ -365,8 +384,15 @@ export default function Sinav() {
                     </div>
                 </div>
 
-                {/* Çıkış */}
-                <div className="flex-shrink-0 flex items-center">
+                {/* Çıkış ve ses butonu */}
+                <div className="flex-shrink-0 flex items-center gap-2">
+                    <button
+                        onClick={() => setSesAcik(!sesAcik)}
+                        className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+                        title={sesAcik ? "Sesleri Kapat" : "Sesleri Aç"}
+                    >
+                        {sesAcik ? <Volume2 size={20} /> : <VolumeX size={20} />}
+                    </button>
                     <button onClick={cikisOnayi}>
                         <X size={30} className="x" />
                     </button>

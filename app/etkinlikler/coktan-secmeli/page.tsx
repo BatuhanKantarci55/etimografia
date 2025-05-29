@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
 import { motion } from 'framer-motion';
-import { Star, X } from 'lucide-react';
+import { Star, X, Volume2, VolumeX } from 'lucide-react';
 import { playCorrectSound, playWrongSound, playComboSound, playFireworksSound } from '@/utils/sounds';
 import { puanGuncelle } from '@/lib/puan';
 
@@ -27,6 +27,7 @@ export default function SecimliSinav() {
     const [zorluk, setZorluk] = useState<ZorlukSecim>('karisik');
     const [basladi, setBasladi] = useState(false);
     const [bitti, setBitti] = useState(false);
+    const [sesAcik, setSesAcik] = useState(true); // Yeni eklenen ses durumu state'i
 
     const [sorular, setSorular] = useState<SoruTipi[]>([]);
     const [indeks, setIndeks] = useState(0);
@@ -45,10 +46,15 @@ export default function SecimliSinav() {
 
     const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
 
-    // fetchSorular fonksiyonunu useCallback içine aldık
+    // Ses çalma fonksiyonlarını sarmalayan yardımcı fonksiyon
+    const playSound = (soundFunction: () => void) => {
+        if (sesAcik) {
+            soundFunction();
+        }
+    };
+
     const fetchSorular = useCallback(async () => {
         try {
-            // 1. İlişki verilerini çek
             const { data: relations, error: relationsError } = await supabase
                 .from('word_relations')
                 .select('id, difficulty, old_word_id, new_word_id');
@@ -59,7 +65,6 @@ export default function SecimliSinav() {
                 return;
             }
 
-            // 2. Tüm kelimeleri tek seferde çek
             const { data: oldWords, error: oldWordsError } = await supabase
                 .from('old_words')
                 .select('id, text');
@@ -70,7 +75,6 @@ export default function SecimliSinav() {
 
             if (oldWordsError || newWordsError) throw oldWordsError || newWordsError;
 
-            // 3. Verileri birleştir
             const combinedData = relations.map(relation => {
                 const oldWord = oldWords?.find(w => w.id === relation.old_word_id);
                 const newWord = newWords?.find(w => w.id === relation.new_word_id);
@@ -82,12 +86,10 @@ export default function SecimliSinav() {
                 };
             });
 
-            // 4. Zorluk filtresi uygula
             const filtreli = combinedData.filter(item =>
                 zorluk === 'karisik' || item.difficulty === zorluk
             );
 
-            // 5. Soruları oluştur
             const secimliSorular: SoruTipi[] = filtreli.map(item => {
                 const soru = yon === 'eski' ? item.old_word : item.new_word;
                 const dogruCevap = yon === 'eski' ? item.new_word : item.old_word;
@@ -117,9 +119,8 @@ export default function SecimliSinav() {
         } catch (error) {
             console.error('Veri çekme hatası:', error);
         }
-    }, [yon, zorluk]); // Bağımlılıkları ekledik
+    }, [yon, zorluk]);
 
-    // baslat fonksiyonundan fetchSorular bağımlılığını kaldırdık
     const baslat = useCallback(async () => {
         await fetchSorular();
         setBasladi(true);
@@ -142,15 +143,13 @@ export default function SecimliSinav() {
         setSonuc(dogru ? 'dogru' : 'yanlis');
 
         if (dogru) {
-            playCorrectSound();
+            playSound(playCorrectSound);
 
-            // Streak'i önce arttırıyoruz ki yeni değeri kontrol edebilelim
             setStreak(prevStreak => {
                 const newStreak = prevStreak + 1;
 
-                // Sadece 5. streak'te ve combo aktif değilken ses çal
                 if (newStreak === 5 && !comboAktif) {
-                    playComboSound();
+                    playSound(playComboSound);
                     setComboAktif(true);
                 }
 
@@ -159,8 +158,8 @@ export default function SecimliSinav() {
 
             setPuan(p => {
                 let artanPuan = sorular[indeks].zorluk * 2;
-                if (streak + 1 >= 5) { // streak + 1 çünkü henüz güncellenmedi
-                    artanPuan += 2; // Combo bonus puanı
+                if (streak + 1 >= 5) {
+                    artanPuan += 2;
                 }
                 return p + artanPuan;
             });
@@ -168,7 +167,7 @@ export default function SecimliSinav() {
             setDogruSayisi(c => c + 1);
             setSure(s => s + 0.5);
         } else {
-            playWrongSound();
+            playSound(playWrongSound);
             setPuan(p => Math.max(0, p - 5));
             setYanlisSayisi(c => c + 1);
             setStreak(0);
@@ -182,7 +181,7 @@ export default function SecimliSinav() {
                 setBitti(true);
             }, 1000);
         }
-    }, [sorular, indeks, comboAktif, streak]);
+    }, [sorular, indeks, comboAktif, streak, sesAcik]);
 
     const sonraki = useCallback(() => {
         if (indeks + 1 >= sorular.length) {
@@ -219,7 +218,7 @@ export default function SecimliSinav() {
         timerRef.current = window.setInterval(() => {
             setSure(prev => {
                 if (prev <= 1) {
-                    playFireworksSound();
+                    playSound(playFireworksSound);
                     clearInterval(timerRef.current!);
                     setBasladi(false);
                     setBitti(true);
@@ -230,7 +229,7 @@ export default function SecimliSinav() {
         }, 1000);
 
         return () => clearInterval(timerRef.current!);
-    }, [basladi]);
+    }, [basladi, sesAcik]);
 
     useEffect(() => {
         const handleKeyDown = (e: KeyboardEvent) => {
@@ -296,7 +295,16 @@ export default function SecimliSinav() {
                 >
                     <h1 className="text-center text-2xl font-bold">Çoktan Seçmeli Sınav Ayarları</h1>
 
-                    {/* Ayar butonları buraya gelecek */}
+                    <div className="flex justify-end">
+                        <button
+                            onClick={() => setSesAcik(!sesAcik)}
+                            className="p-2 rounded-full hover:bg-gray-100 transition-colors"
+                            title={sesAcik ? "Sesleri Kapat" : "Sesleri Aç"}
+                        >
+                            {sesAcik ? <Volume2 size={30} /> : <VolumeX size={30} />}
+                        </button>
+                    </div>
+
                     <div>
                         <p className="font-semibold mb-2">Yön:</p>
                         <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
@@ -353,9 +361,12 @@ export default function SecimliSinav() {
 
     return (
         <div className="md:mt-16 p-6 flex items-center justify-center relative">
-            <button onClick={cikisOnayi} className="absolute -top-2 md:top-4 right-4 p-1 rounded-full exam-card2 shadow">
-                <X size={20} />
-            </button>
+            <div className="absolute top-4 right-4 flex gap-2">
+                <button onClick={cikisOnayi} className="p-2 rounded-full hover:bg-gray-100 transition-colors">
+                    <X size={20} />
+                </button>
+            </div>
+
             <motion.div className="max-w-md w-full p-6 rounded-2xl shadow-md space-y-6 exam-card">
                 <div className="flex justify-between text-sm">
                     <span>⏳ {sure}s</span>
@@ -406,7 +417,7 @@ export default function SecimliSinav() {
                                     ? 'right-option-card'
                                     : 'wrong-option-card'
                                 : secim === soru.dogruCevap && cevap !== null && sonuc === 'yanlis'
-                                    ? 'right-option-card' // Doğru cevabı yeşil yap
+                                    ? 'right-option-card'
                                     : 'button'
                                 }`}
                         >

@@ -104,7 +104,7 @@ export default function LiderlikSayfasi() {
                                 <Link href={`/profil/${kullanici.username}`}>
                                     <div className="relative w-16 h-16 hover:scale-105 transition-transform">
                                         <Image
-                                            src={kullanici.avatar}
+                                            src={kullanici.avatar || '/default-avatar.png'}
                                             alt={kullanici.username}
                                             fill
                                             className="rounded-full object-cover"

@@ -10,7 +10,13 @@ const nextConfig: NextConfig = {
         ignoreBuildErrors: true, // TypeScript hatalarını ignore et (isteğe bağlı)
     },
     images: {
-        domains: ['ucatuzhvtvmnbsnuqfaj.supabase.co'],
+        remotePatterns: [
+            {
+                protocol: 'https',
+                hostname: 'ucatuzhvtvmnbsnuqfaj.supabase.co',
+                pathname: '/storage/v1/object/public/avatars/**',
+            },
+        ],
     },
     // Netlify için gerekli eklenti
     experimental: {

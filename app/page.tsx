@@ -14,45 +14,45 @@ export default function HomePage() {
     },
     {
       id: 2,
+      title: "Ses kapatma seçeneği",
+      description: "Oyun seslerini kapatabileceğiniz kontrol butonu",
+      progress: 100
+    },
+    {
+      id: 3,
       title: "500 kelimelik liste",
       description: "500 kelimeyi ve etimolojik kökenlerini içeren kapsamlı bir veri seti",
       progress: 85
     },
     {
-      id: 3,
+      id: 4,
       title: "Günlük seri ve günlük etkinlik",
       description: "Her gün yeni bir kelime öğrenme serisi ve düzenli katılımı teşvik eden günlük ödüllü etkinlikler",
       progress: 75
     },
     {
-      id: 4,
+      id: 5,
       title: "Yeni profil sayfası arayüzü",
       description: "Kullanıcı istatistiklerini daha görsel ve interaktif gösteren, kişiselleştirilebilir yeni profil tasarımı",
       progress: 65
     },
     {
-      id: 5,
+      id: 6,
       title: "Başarım rozetleri",
       description: "Belirli hedeflere ulaşan kullanıcılar için rozet sistemi ve koleksiyon görünümü",
       progress: 60
     },
     {
-      id: 6,
+      id: 7,
       title: "Eşleştirme modu",
       description: "Kelimeleri karşılıklarıyla eşleştirme, kökenlerine göre gruplandırma gibi yeni interaktif öğrenme yöntemleri.",
       progress: 50
     },
     {
-      id: 7,
+      id: 8,
       title: "Düello modu",
       description: "Arkadaşlarınızla kelime bilginizi test edebileceğiniz eğlenceli düello sistemi",
       progress: 25
-    },
-    {
-      id: 8,
-      title: "Ses kapatma seçeneği",
-      description: "Oyun seslerini kapatabileceğiniz kontrol butonu",
-      progress: 10
     },
     {
       id: 9,

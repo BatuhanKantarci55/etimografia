@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createBrowserClient } from '@supabase/ssr';
-import { Clock, X, ChevronRight, ChevronLeft, HelpCircle } from 'lucide-react';
+import { Clock, ChevronRight, HelpCircle } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 type DailyQuestion = {
@@ -21,7 +21,6 @@ type UserAnswer = {
     isCorrect: boolean;
     hintsUsed: number;
     earnedPoints: number;
-    showHints: boolean;
 };
 
 const supabase = createBrowserClient(
@@ -42,9 +41,11 @@ export default function DailyActivity() {
     const [showHints, setShowHints] = useState(false);
     const [score, setScore] = useState(0);
     const [streak, setStreak] = useState(0);
+    const [lockedInputs, setLockedInputs] = useState<boolean[]>([]);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
+    // Günlük soruları yükle
     useEffect(() => {
         const fetchDailyQuestions = async () => {
             try {
@@ -65,6 +66,7 @@ export default function DailyActivity() {
                     return;
                 }
 
+                // Yeni sorular çek
                 const { data: questionsData, error: questionsError } = await supabase
                     .from('daily_activity_questions')
                     .select('*')
@@ -104,6 +106,7 @@ export default function DailyActivity() {
         fetchDailyQuestions();
     }, []);
 
+    // Oyun zamanlayıcısı
     useEffect(() => {
         if (gameStatus !== 'playing') return;
 
@@ -125,6 +128,7 @@ export default function DailyActivity() {
         };
     }, [gameStatus, timeLeft]);
 
+    // Oyunu başlat
     const startGame = () => {
         setGameStatus('playing');
         setTimeLeft(100);
@@ -133,9 +137,11 @@ export default function DailyActivity() {
         setCurrentQuestionIndex(0);
         setInputValues(['']);
         setHintsUsed(0);
+        setLockedInputs([]);
         setShowHints(false);
     };
 
+    // Oyunu bitir
     const finishGame = useCallback(async () => {
         if (timerRef.current) {
             clearTimeout(timerRef.current);
@@ -183,6 +189,7 @@ export default function DailyActivity() {
         }
     }, [questions, userAnswers, score, timeLeft]);
 
+    // Cevap kontrolü
     const checkAnswer = useCallback(() => {
         if (!questions[currentQuestionIndex]) return;
 
@@ -200,7 +207,6 @@ export default function DailyActivity() {
             isCorrect,
             hintsUsed,
             earnedPoints: isCorrect ? earnedPoints : 0,
-            showHints
         };
 
         setUserAnswers(newAnswers);
@@ -208,20 +214,26 @@ export default function DailyActivity() {
         if (isCorrect) {
             setScore(prev => prev + earnedPoints);
 
+            // Son soru mu kontrol et
             const isLastQuestion = currentQuestionIndex === questions.length - 1;
 
             if (isLastQuestion) {
                 finishGame();
-            } else {
-                const nextIndex = currentQuestionIndex + 1;
-                setCurrentQuestionIndex(nextIndex);
-                setInputValues(newAnswers[nextIndex]?.answer || ['']);
-                setHintsUsed(newAnswers[nextIndex]?.hintsUsed || 0);
-                setShowHints(newAnswers[nextIndex]?.showHints || false);
+            }
+        } else {
+            // Yanlış cevap: inputu temizle ve animasyon ekle
+            setInputValues(['']);
+            const inputContainer = document.getElementById('input-container');
+            if (inputContainer) {
+                inputContainer.classList.add('animate-shake');
+                setTimeout(() => {
+                    inputContainer.classList.remove('animate-shake');
+                }, 500);
             }
         }
-    }, [currentQuestionIndex, questions, inputValues, hintsUsed, userAnswers, finishGame, showHints]);
+    }, [currentQuestionIndex, questions, inputValues, hintsUsed, userAnswers, finishGame]);
 
+    // İpucu kullan
     const useHint = useCallback(() => {
         if (hintsUsed >= 3 || !questions[currentQuestionIndex]) return;
 
@@ -231,53 +243,90 @@ export default function DailyActivity() {
 
         const currentQuestion = questions[currentQuestionIndex];
         let newValues = [...inputValues];
+        let newLockedInputs = [...lockedInputs];
 
-        switch (hintsUsed) {
-            case 0:
+        switch (newHintsUsed) {
+            case 1: // Harf sayısını göster
                 newValues = Array(currentQuestion.cevap.length).fill('');
+                newLockedInputs = Array(currentQuestion.cevap.length).fill(false);
                 break;
-            case 1:
+            case 2: // Baş ipucu
                 const startHint = currentQuestion.ipucu_bas;
                 for (let i = 0; i < startHint.length && i < newValues.length; i++) {
                     newValues[i] = startHint[i];
+                    newLockedInputs[i] = true;
                 }
+                // Focus on the next available input
+                const nextInputIndex = startHint.length;
+                setTimeout(() => {
+                    if (nextInputIndex < inputRefs.current.length) {
+                        inputRefs.current[nextInputIndex]?.focus();
+                    }
+                }, 0);
                 break;
-            case 2:
+            case 3: // Son ipucu
                 const endHint = currentQuestion.ipucu_son;
                 for (let i = 0; i < endHint.length; i++) {
                     const pos = newValues.length - endHint.length + i;
                     if (pos >= 0 && pos < newValues.length) {
                         newValues[pos] = endHint[i];
+                        newLockedInputs[pos] = true;
                     }
                 }
+                // Focus on the first available input from the start
+                const firstEmptyIndex = newValues.findIndex((val, idx) => !newLockedInputs[idx] && val === '');
+                setTimeout(() => {
+                    if (firstEmptyIndex !== -1 && firstEmptyIndex < inputRefs.current.length) {
+                        inputRefs.current[firstEmptyIndex]?.focus();
+                    } else {
+                        // If all inputs are locked, focus on the last one
+                        inputRefs.current[newValues.length - 1]?.focus();
+                    }
+                }, 0);
                 break;
         }
 
         setInputValues(newValues);
-    }, [currentQuestionIndex, questions, inputValues, hintsUsed]);
+        setLockedInputs(newLockedInputs);
+    }, [currentQuestionIndex, questions, inputValues, hintsUsed, lockedInputs]);
 
+    // Input değişikliklerini yönet
     const handleInputChange = useCallback((index: number, value: string, inputElement: HTMLInputElement) => {
         setInputValues(prev => {
             const newValues = [...prev];
 
+            // Eğer bu input kilitliyse değişikliğe izin verme
+            if (lockedInputs[index]) {
+                return prev;
+            }
+
+            // Harf ekleme
             if (value && value.length === 1) {
                 newValues[index] = value.toLowerCase();
 
+                // Yeni input ekle (eğer son kutuysa ve max uzunluk aşılmadıysa)
                 if (index === newValues.length - 1 && newValues.length < 30) {
                     newValues.push('');
+                    setLockedInputs(prev => [...prev, false]);
+                    // Yeni eklenen inputa odaklan
                     setTimeout(() => {
                         inputRefs.current[index + 1]?.focus();
                     }, 0);
                 } else if (index < newValues.length - 1) {
-                    setTimeout(() => {
-                        inputRefs.current[index + 1]?.focus();
-                    }, 0);
+                    // Sonraki inputa otomatik geç (eğer kilitli değilse)
+                    const nextIndex = index + 1;
+                    if (nextIndex < newValues.length && !lockedInputs[nextIndex]) {
+                        setTimeout(() => {
+                            inputRefs.current[nextIndex]?.focus();
+                        }, 0);
+                    }
                 }
             }
+            // Backspace ile harf silme
             else if (value === '' && index >= 0) {
                 newValues[index] = '';
-                if (index > 0 && newValues[index] === '') {
-                    newValues.splice(index, 1);
+                // Eğer kutu boşsa ve ilk kutu değilse, önceki kutuya odaklan (eğer kilitli değilse)
+                if (index > 0 && newValues[index] === '' && !lockedInputs[index - 1]) {
                     setTimeout(() => {
                         inputRefs.current[index - 1]?.focus();
                     }, 0);
@@ -286,50 +335,71 @@ export default function DailyActivity() {
 
             return newValues;
         });
-    }, []);
+    }, [lockedInputs]);
 
+    // Klavye olaylarını yönet
     const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>, index: number) => {
         if (e.key === 'Enter') {
             checkAnswer();
-        } else if (e.key === 'Backspace' && inputValues[index] === '' && index > 0) {
+        } else if (e.key === 'Backspace' && inputValues[index] === '' && index > 0 && !lockedInputs[index - 1]) {
+            // Önceki inputa odaklan (eğer kilitli değilse)
             inputRefs.current[index - 1]?.focus();
+        } else if (e.key === 'ArrowLeft' && index > 0 && !lockedInputs[index - 1]) {
+            // Sol ok tuşu ile önceki inputa geç (eğer kilitli değilse)
+            inputRefs.current[index - 1]?.focus();
+            e.preventDefault();
+        } else if (e.key === 'ArrowRight' && index < inputValues.length - 1 && !lockedInputs[index + 1]) {
+            // Sağ ok tuşu ile sonraki inputa geç (eğer kilitli değilse)
+            inputRefs.current[index + 1]?.focus();
+            e.preventDefault();
         }
-    }, [checkAnswer, inputValues]);
+    }, [checkAnswer, inputValues, lockedInputs]);
 
+    // Soru değiştiğinde inputları sıfırla
     useEffect(() => {
         if (gameStatus !== 'playing') return;
 
         const currentAnswer = userAnswers[currentQuestionIndex];
+        const answerLength = currentAnswer?.answer?.length || 1;
+
         setInputValues(currentAnswer?.answer || ['']);
         setHintsUsed(currentAnswer?.hintsUsed || 0);
-        setShowHints(currentAnswer?.showHints || false);
+        setLockedInputs(Array(answerLength).fill(false));
+
+        // Eğer ipucu kullanılmışsa veya cevap verilmişse kutucukları göster
+        setShowHints((currentAnswer?.hintsUsed || 0) > 0 || (currentAnswer?.isCorrect || false));
     }, [currentQuestionIndex, gameStatus, userAnswers]);
 
+    // Inputlara otomatik odaklanma
     useEffect(() => {
         if (gameStatus === 'playing' && inputRefs.current.length > 0) {
-            const lastFilledIndex = inputValues.findIndex(val => val === '');
-            const focusIndex = lastFilledIndex === -1 ? inputValues.length - 1 : Math.max(0, lastFilledIndex - 1);
-            inputRefs.current[focusIndex]?.focus();
+            // İlk boş veya kilitli olmayan inputu bul
+            const focusIndex = inputValues.findIndex((val, idx) => !lockedInputs[idx] && val === '');
+            if (focusIndex !== -1) {
+                inputRefs.current[focusIndex]?.focus();
+            } else {
+                // Tüm inputlar doluysa son inputa odaklan
+                inputRefs.current[inputValues.length - 1]?.focus();
+            }
         }
-    }, [inputValues, gameStatus]);
+    }, [inputValues, gameStatus, lockedInputs]);
 
+    // Sonraki soruya geç
     const goToNextQuestion = useCallback(() => {
-        if (currentQuestionIndex < questions.length - 1) {
+        if (currentQuestionIndex < questions.length - 1 && userAnswers[currentQuestionIndex]?.isCorrect) {
             setCurrentQuestionIndex(prev => prev + 1);
         }
-    }, [currentQuestionIndex, questions.length]);
+    }, [currentQuestionIndex, questions.length, userAnswers]);
 
-    const goToPreviousQuestion = useCallback(() => {
-        if (currentQuestionIndex > 0) {
-            setCurrentQuestionIndex(prev => prev - 1);
-        }
-    }, [currentQuestionIndex]);
-
+    // Soru numarasına git (sadece cevaplanmış sorulara gidebilir)
     const goToQuestion = useCallback((index: number) => {
         if (index >= 0 && index < questions.length) {
-            setCurrentQuestionIndex(index);
+            const isAnswered = userAnswers[index]?.isCorrect;
+            if (isAnswered || index === currentQuestionIndex) {
+                setCurrentQuestionIndex(index);
+            }
         }
-    }, [questions.length]);
+    }, [questions.length, userAnswers, currentQuestionIndex]);
 
     if (loading) {
         return <div className="flex items-center justify-center min-h-screen">Yükleniyor...</div>;
@@ -498,9 +568,10 @@ export default function DailyActivity() {
                     </button>
                 </div>
 
-                <div className="mb-6">
+                <div id="input-container" className="mb-6">
                     <div className="flex flex-wrap gap-2 mb-4">
-                        {!showHints ? (
+                        {(!showHints && !isAnswered) ? (
+                            // İpucu kullanılmamışken ve cevap verilmemişken tek input
                             <div className="w-full">
                                 <input
                                     ref={el => { inputRefs.current[0] = el; }}
@@ -519,6 +590,7 @@ export default function DailyActivity() {
                                 />
                             </div>
                         ) : (
+                            // İpucu kullanıldıktan sonra veya cevap verildikten sonra harf kutucukları
                             inputValues.map((value, index) => (
                                 <div
                                     key={index}
@@ -526,7 +598,9 @@ export default function DailyActivity() {
                                         ? value.toLowerCase() === currentQuestion.cevap[index]?.toLowerCase()
                                             ? 'border-green-500 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
                                             : 'border-red-500 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
-                                        : 'border-gray-300 dark:border-gray-600'
+                                        : lockedInputs[index]
+                                            ? 'border-blue-500 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+                                            : 'border-gray-300 dark:border-gray-600'
                                         }`}
                                 >
                                     <input
@@ -536,15 +610,15 @@ export default function DailyActivity() {
                                         onChange={(e) => handleInputChange(index, e.target.value, e.target)}
                                         onKeyDown={(e) => handleKeyDown(e, index)}
                                         maxLength={1}
-                                        disabled={isAnswered}
-                                        className="w-full h-full text-center font-medium text-lg bg-transparent focus:outline-none uppercase"
+                                        disabled={isAnswered || lockedInputs[index]}
+                                        className={`w-full h-full text-center font-medium text-lg bg-transparent focus:outline-none uppercase ${lockedInputs[index] ? 'text-blue-600 dark:text-blue-300' : ''}`}
                                     />
                                 </div>
                             ))
                         )}
                     </div>
 
-                    {showHints && hintsUsed === 1 && (
+                    {showHints && hintsUsed === 1 && !isAnswered && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                             Cevap {currentQuestion.cevap.length} harfli.
                         </p>
@@ -563,24 +637,12 @@ export default function DailyActivity() {
                 </button>
             </div>
 
-            <div className="max-w-2xl mx-auto flex justify-between">
-                <button
-                    onClick={goToPreviousQuestion}
-                    disabled={currentQuestionIndex === 0}
-                    className={`flex items-center px-4 py-2 rounded-lg ${currentQuestionIndex === 0
-                        ? 'text-white rounded-3xl shadow-2xl bg-black/40 cursor-not-allowed'
-                        : 'text-white rounded-3xl shadow-2xl bg-black/40 hover:bg-blue-600 transition'
-                        }`}
-                >
-                    <ChevronLeft className="w-5 h-5 mr-1" />
-                    Önceki
-                </button>
-
+            <div className="max-w-2xl mx-auto flex justify-end">
                 <button
                     onClick={goToNextQuestion}
-                    disabled={currentQuestionIndex === questions.length - 1 || !currentAnswer?.isCorrect}
-                    className={`flex items-center px-4 py-2 rounded-lg ${currentQuestionIndex === questions.length - 1 || !currentAnswer?.isCorrect
-                        ? 'text-white rounded-3xl shadow-2xl bg-black/40 cursor-not-allowed'
+                    disabled={currentQuestionIndex === questions.length - 1 || !userAnswers[currentQuestionIndex]?.isCorrect}
+                    className={`flex items-center px-4 py-2 rounded-lg ${currentQuestionIndex === questions.length - 1 || !userAnswers[currentQuestionIndex]?.isCorrect
+                        ? 'text-white rounded-3xl shadow-2xl bg-black/20 cursor-default opacity-50'
                         : 'text-white rounded-3xl shadow-2xl bg-black/40 hover:bg-blue-600 transition'
                         }`}
                 >

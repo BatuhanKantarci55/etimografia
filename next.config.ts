@@ -4,24 +4,23 @@ import type { NextConfig } from 'next'
 const nextConfig: NextConfig = {
     reactStrictMode: true,
     eslint: {
-        ignoreDuringBuilds: true, // Build sırasında ESLint hatalarını ignore et
+        ignoreDuringBuilds: true,
     },
     typescript: {
-        ignoreBuildErrors: true, // TypeScript hatalarını ignore et (isteğe bağlı)
+        ignoreBuildErrors: true,
     },
     images: {
         remotePatterns: [
             {
                 protocol: 'https',
                 hostname: 'ucatuzhvtvmnbsnuqfaj.supabase.co',
-                pathname: '/storage/v1/object/public/avatars/**',
+                pathname: '/storage/v1/object/public/**', // avatars/** yerine daha geniş
             },
         ],
     },
-    // Netlify için gerekli eklenti
     experimental: {
-        esmExternals: 'loose'
-    }
+        esmExternals: 'loose',
+    },
 }
 
 export default nextConfig

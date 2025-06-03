@@ -22,6 +22,7 @@ export default function ProfilSayfasi() {
         toplamPuan: number
         siralama: number
         highestScore: number
+        biography?: string // Yeni eklenen alan
     } | null>(null)
 
     useEffect(() => {
@@ -36,14 +37,15 @@ export default function ProfilSayfasi() {
                 const { data: profileData } = await supabase
                     .from('profiles')
                     .select(`
-                        name,
-                        surname,
-                        username,
-                        avatar,
-                        created_at,
-                        total_score,
-                        highest_score
-                    `)
+                name,
+                surname,
+                username,
+                avatar,
+                created_at,
+                total_score,
+                highest_score,
+                biography 
+            `)
                     .eq('id', currentUser.id)
                     .single()
 
@@ -81,6 +83,7 @@ export default function ProfilSayfasi() {
                     toplamPuan: profileData.total_score ?? 0,
                     siralama: 0,
                     highestScore: profileData.highest_score ?? 0,
+                    biography: profileData.biography ?? '' // Yeni eklenen alan
                 })
             } catch (err) {
                 console.error('fetchUserData hata:', err)
@@ -155,6 +158,11 @@ export default function ProfilSayfasi() {
                 <h2 className="text-lg font-bold">{kullanici.ad}</h2>
                 <p>@{kullanici.kullaniciAdi}</p>
                 <p className="text-gray-400">{tarihYazi} tarihinde katıldı</p>
+                {kullanici.biography && (
+                    <div className="exam-card p-4 rounded-xl shadow w-full text-left mt-2">
+                        <p className="text-base italic whitespace-pre-line">{kullanici.biography}</p>
+                    </div>
+                )}
             </div>
 
             <div className="exam-card rounded-xl shadow p-3 mb-4">

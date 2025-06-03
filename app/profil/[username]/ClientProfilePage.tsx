@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
 import Image from 'next/image'
+import Link from 'next/link'
+import { FiChevronDown, FiChevronUp } from 'react-icons/fi'
 
 type Profile = {
     id: string
@@ -14,6 +16,12 @@ type Profile = {
     total_score: number | null
     highest_score: number | null
     last_active: string | null
+    biography?: string | null
+}
+
+type Friend = {
+    username: string
+    avatar: string | null
 }
 
 function zamanFarkiMetni(lastActiveStr: string | null) {
@@ -46,6 +54,8 @@ export default function ClientProfilePage({ username }: { username: string }) {
     const [arkadaslikDurumu, setArkadaslikDurumu] = useState<'arkadas' | 'bekliyor' | 'yok'>('yok')
     const [leaderboardSirrasi, setLeaderboardSirrasi] = useState<number | null>(null)
     const [enYuksekSira, setEnYuksekSira] = useState<number | null>(null)
+    const [arkadaslar, setArkadaslar] = useState<Friend[]>([])
+    const [arkadaslarAcik, setArkadaslarAcik] = useState(false)
 
     useEffect(() => {
         async function fetchData() {
@@ -54,7 +64,7 @@ export default function ClientProfilePage({ username }: { username: string }) {
 
             const { data: prof, error: profError } = await supabase
                 .from('profiles')
-                .select('id, name, surname, username, avatar, created_at, total_score, highest_score, last_active')
+                .select('id, name, surname, username, avatar, created_at, total_score, highest_score, last_active, biography')
                 .eq('username', username)
                 .single()
 
@@ -66,6 +76,35 @@ export default function ClientProfilePage({ username }: { username: string }) {
 
             setProfile(prof)
             setHedefID(prof.id)
+
+            // Arkadaşları getir
+            const fetchFriends = async (userId: string) => {
+                const { data: friendships } = await supabase
+                    .from('friendships')
+                    .select('user_id, friend_id')
+                    .or(`user_id.eq.${userId},friend_id.eq.${userId}`)
+                    .eq('status', 'accepted')
+
+                const arkadasIdler = friendships
+                    ? friendships
+                        .map((f) => (f.user_id === userId ? f.friend_id : f.user_id))
+                        .filter((id) => id !== userId)
+                    : []
+
+                if (arkadasIdler.length > 0) {
+                    const { data: friendsProfiles } = await supabase
+                        .from('profiles')
+                        .select('username, avatar')
+                        .in('id', arkadasIdler)
+
+                    setArkadaslar(friendsProfiles?.map(p => ({
+                        username: p.username,
+                        avatar: p.avatar
+                    })) ?? [])
+                }
+            }
+
+            fetchFriends(prof.id)
 
             // Toplam puan sırası
             const { data: leaderboard } = await supabase
@@ -181,6 +220,43 @@ export default function ClientProfilePage({ username }: { username: string }) {
                 <p className="text-gray-600">@{profile.username}</p>
                 <p className="text-sm text-gray-400">{katilmaTarihi} tarihinde katıldı</p>
                 <p className={`text-sm italic ${aktiflikRenk}`}>{aktiflikDurumu}</p>
+
+                {profile.biography && (
+                    <div className="exam-card p-4 rounded-xl shadow w-full text-left mt-2">
+                        <p className="text-base italic whitespace-pre-line">{profile.biography}</p>
+                    </div>
+                )}
+            </div>
+
+            {/* Arkadaşlar Bölümü */}
+            <div className="exam-card rounded-xl shadow p-3 mb-4">
+                <div
+                    className="flex justify-between items-center cursor-pointer"
+                    onClick={() => setArkadaslarAcik(!arkadaslarAcik)}
+                >
+                    <p className="text-base">Arkadaşlar ({arkadaslar.length})</p>
+                    {arkadaslarAcik ? <FiChevronUp /> : <FiChevronDown />}
+                </div>
+                {arkadaslarAcik && (
+                    <ul className="mt-2 text-left text-sm max-h-48 overflow-y-auto">
+                        {arkadaslar.map((arkadas) => (
+                            <li key={arkadas.username} className="py-1 flex items-center gap-2">
+                                <Link href={`/profil/${arkadas.username}`}>
+                                    <div className="flex items-center gap-2 hover:scale-105 transition-transform p-1 rounded-md">
+                                        <Image
+                                            src={arkadas.avatar || '/avatar.png'}
+                                            alt={`${arkadas.username} avatar`}
+                                            width={64}
+                                            height={64}
+                                            className="w-12 h-12 rounded-full object-cover"
+                                        />
+                                        <span className='text-base'>@{arkadas.username}</span>
+                                    </div>
+                                </Link>
+                            </li>
+                        ))}
+                    </ul>
+                )}
             </div>
 
             <div className="grid grid-cols-2 gap-4 text-center mb-6">

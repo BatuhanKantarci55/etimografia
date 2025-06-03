@@ -10,6 +10,7 @@ type Props = {
     mevcutAd: string
     mevcutKullaniciAdi: string
     mevcutAvatar: string
+    mevcutBiyografi?: string
 }
 
 export default function ProfilDuzenlePaneli({
@@ -18,22 +19,22 @@ export default function ProfilDuzenlePaneli({
     mevcutAd,
     mevcutKullaniciAdi,
     mevcutAvatar,
+    mevcutBiyografi = ''
 }: Props) {
     const [ad, setAd] = useState('')
     const [soyad, setSoyad] = useState('')
     const [kullaniciAdi, setKullaniciAdi] = useState(mevcutKullaniciAdi)
     const [avatar, setAvatar] = useState(mevcutAvatar)
+    const [biyografi, setBiyografi] = useState(mevcutBiyografi)
     const [avatarListesi, setAvatarListesi] = useState<string[]>([])
     const [kAdiUyari, setKAdiUyari] = useState<string | null>(null)
 
-    // Mevcut ad soyad ayırma
     useEffect(() => {
         const [isim, ...kalan] = mevcutAd.split(' ')
         setAd(isim || '')
         setSoyad(kalan.join(' ') || '')
     }, [mevcutAd])
 
-    // Avatar listesini Supabase Storage’dan çek
     useEffect(() => {
         async function avatarlariGetir() {
             const { data, error } = await supabase.storage
@@ -46,7 +47,6 @@ export default function ProfilDuzenlePaneli({
             }
 
             if (data) {
-                // Her dosya için public url oluştur
                 const urls = data.map((file) =>
                     supabase.storage.from('avatars').getPublicUrl(file.name).data.publicUrl
                 )
@@ -57,7 +57,6 @@ export default function ProfilDuzenlePaneli({
         avatarlariGetir()
     }, [])
 
-    // Kullanıcı adı benzersiz mi kontrol et
     async function kontrolEtKullaniciAdi() {
         if (!kullaniciAdi) {
             setKAdiUyari('Kullanıcı adı boş olamaz.')
@@ -75,7 +74,6 @@ export default function ProfilDuzenlePaneli({
         } = await supabase.auth.getUser()
 
         if (error && error.code !== 'PGRST116') {
-            // PGRST116 = kayıt bulunamadı, o yüzden hata sayma
             console.error(error)
             setKAdiUyari('Kullanıcı adı kontrol edilirken hata oluştu.')
             return
@@ -88,7 +86,6 @@ export default function ProfilDuzenlePaneli({
         }
     }
 
-    // Kaydetme fonksiyonu
     async function kaydet() {
         const {
             data: { user },
@@ -104,6 +101,7 @@ export default function ProfilDuzenlePaneli({
                 surname: soyad,
                 username: kullaniciAdi,
                 avatar: avatar,
+                biography: biyografi
             })
             .eq('id', user.id)
 
@@ -190,6 +188,23 @@ export default function ProfilDuzenlePaneli({
                         className="exam-card2 w-full rounded p-2 mt-1"
                     />
                     {kAdiUyari && <p className="text-red-500 text-sm mt-1">{kAdiUyari}</p>}
+                </div>
+
+                <div className="mb-4 text-left">
+                    <label className="text-sm text-gray-500" htmlFor="inputBiyografi">
+                        Biyografi
+                    </label>
+                    <textarea
+                        id="inputBiyografi"
+                        value={biyografi}
+                        onChange={(e) => setBiyografi(e.target.value)}
+                        className="exam-card2 w-full rounded p-2 mt-1 h-24"
+                        placeholder="Kendiniz hakkında bir şeyler yazın..."
+                        maxLength={500}
+                    />
+                    <p className="text-xs text-gray-500 text-right">
+                        {biyografi.length}/500 karakter
+                    </p>
                 </div>
 
                 <div className="flex justify-end gap-2">

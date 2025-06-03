@@ -31,24 +31,52 @@ const supabase = createBrowserClient(
 export default function DailyActivity() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
+    const [alreadyCompleted, setAlreadyCompleted] = useState(false);
     const [questions, setQuestions] = useState<DailyQuestion[]>([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-    const [userAnswers, setUserAnswers] = useState<(UserAnswer | null)[]>(Array(6).fill(null));
-    const [timeLeft, setTimeLeft] = useState(100);
+    const [userAnswers, setUserAnswers] = useState<(UserAnswer | null)[]>(Array(10).fill(null));
+    const [timeLeft, setTimeLeft] = useState(150); // 150 saniye
     const [gameStatus, setGameStatus] = useState<'not-started' | 'playing' | 'finished'>('not-started');
-    const [inputValues, setInputValues] = useState<string[]>(['']);
+    const [inputValues, setInputValues] = useState<string[]>([]);
     const [hintsUsed, setHintsUsed] = useState(0);
-    const [showHints, setShowHints] = useState(false);
+    const [showHints, setShowHints] = useState(true);
     const [score, setScore] = useState(0);
     const [streak, setStreak] = useState(0);
     const [lockedInputs, setLockedInputs] = useState<boolean[]>([]);
+    const [lastPlayedDate, setLastPlayedDate] = useState<string | null>(null);
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
-    // Günlük soruları yükle
+    // Günlük soruları yükle ve streak kontrolü yap
     useEffect(() => {
-        const fetchDailyQuestions = async () => {
+        const fetchData = async () => {
             try {
+                // Kullanıcının son oynama tarihini kontrol et
+                const { data: { user } } = await supabase.auth.getUser();
+                if (user) {
+                    const { data: profile } = await supabase
+                        .from('profiles')
+                        .select('daily_streak, last_activity_date')
+                        .eq('id', user.id)
+                        .single();
+
+                    if (profile) {
+                        setStreak(profile.daily_streak || 0);
+                        setLastPlayedDate(profile.last_activity_date);
+
+                        // Eğer son oynama bugün değilse streak'i sıfırla
+                        const today = new Date().toISOString().split('T')[0];
+                        if (profile.last_activity_date !== today) {
+                            await supabase
+                                .from('profiles')
+                                .update({ daily_streak: 0 })
+                                .eq('id', user.id);
+                            setStreak(0);
+                        }
+                    }
+                }
+
+                // Bugünkü kaydı kontrol et
                 const { data: activityRecord, error: recordError } = await supabase
                     .from('daily_activity_records')
                     .select('*')
@@ -66,7 +94,7 @@ export default function DailyActivity() {
                     return;
                 }
 
-                // Yeni sorular çek
+                // Yeni sorular çek (daha_once_soruldu = false olanlar)
                 const { data: questionsData, error: questionsError } = await supabase
                     .from('daily_activity_questions')
                     .select('*')
@@ -75,35 +103,41 @@ export default function DailyActivity() {
 
                 if (questionsError) throw questionsError;
 
-                if (questionsData.length < 6) {
+                // Eğer yeterli yeni soru yoksa, eski sorulardan tamamla
+                if (questionsData.length < 10) {
                     const { data: oldQuestions, error: oldError } = await supabase
                         .from('daily_activity_questions')
                         .select('*')
-                        .order('puan', { ascending: true })
-                        .limit(6 - questionsData.length);
+                        .order('created_at', { ascending: false })
+                        .limit(10 - questionsData.length);
 
                     if (oldError) throw oldError;
                     questionsData.push(...oldQuestions);
                 }
 
+                // Her puan seviyesinden bir soru seç
                 const selectedQuestions = [
-                    ...questionsData.filter(q => q.puan === 10).slice(0, 1),
-                    ...questionsData.filter(q => q.puan === 20).slice(0, 1),
-                    ...questionsData.filter(q => q.puan === 30).slice(0, 1),
-                    ...questionsData.filter(q => q.puan === 40).slice(0, 1),
-                    ...questionsData.filter(q => q.puan === 50).slice(0, 1),
-                    ...questionsData.filter(q => q.puan === 60).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 100).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 200).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 300).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 400).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 500).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 600).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 700).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 800).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 900).slice(0, 1),
+                    ...questionsData.filter(q => q.puan === 1000).slice(0, 1),
                 ].filter(Boolean);
 
                 setQuestions(selectedQuestions);
                 setLoading(false);
             } catch (error) {
-                console.error('Error fetching daily questions:', error);
+                console.error('Error fetching data:', error);
                 setLoading(false);
             }
         };
 
-        fetchDailyQuestions();
+        fetchData();
     }, []);
 
     // Oyun zamanlayıcısı
@@ -131,14 +165,14 @@ export default function DailyActivity() {
     // Oyunu başlat
     const startGame = () => {
         setGameStatus('playing');
-        setTimeLeft(100);
+        setTimeLeft(150); // 150 saniye
         setScore(0);
-        setUserAnswers(Array(6).fill(null));
+        setUserAnswers(Array(10).fill(null));
         setCurrentQuestionIndex(0);
-        setInputValues(['']);
+        setInputValues([]);
         setHintsUsed(0);
         setLockedInputs([]);
-        setShowHints(false);
+        setShowHints(true);
     };
 
     // Oyunu bitir
@@ -152,42 +186,57 @@ export default function DailyActivity() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
-                const { data: profile, error } = await supabase
-                    .from('profiles')
-                    .select('daily_streak')
-                    .eq('id', user.id)
-                    .single();
+                const today = new Date().toISOString().split('T')[0];
+                const isStreakContinued = lastPlayedDate === today;
 
-                if (!error) {
-                    const newStreak = (profile?.daily_streak || 0) + 1;
-                    setStreak(newStreak);
-                    await supabase
-                        .from('profiles')
-                        .update({ daily_streak: newStreak })
-                        .eq('id', user.id);
+                // Streak'i güncelle
+                const newStreak = isStreakContinued ? streak : streak + 1;
+                setStreak(newStreak);
+
+                // Profili güncelle
+                await supabase
+                    .from('profiles')
+                    .update({
+                        daily_streak: newStreak,
+                        last_activity_date: today
+                    })
+                    .eq('id', user.id);
+
+                // Soruları "soruldu" olarak işaretle
+                const questionIds = questions.map(q => q.id);
+                const { error: updateError } = await supabase
+                    .from('daily_activity_questions')
+                    .update({ daha_once_soruldu: true })
+                    .in('id', questionIds);
+
+                if (updateError) {
+                    console.error('Error updating questions:', updateError);
+                    // Hata durumunda tek tek güncelleme yap
+                    for (const question of questions) {
+                        await supabase
+                            .from('daily_activity_questions')
+                            .update({ daha_once_soruldu: true })
+                            .eq('id', question.id);
+                    }
                 }
 
+                // Oyun kaydını oluştur
                 await supabase
                     .from('daily_activity_records')
                     .upsert({
                         user_id: user.id,
-                        date: new Date().toISOString().split('T')[0],
+                        date: today,
                         questions: questions,
                         answers: userAnswers,
                         score: score,
-                        time_spent: 100 - timeLeft,
+                        time_spent: 150 - timeLeft,
                         completed: true,
                     });
-
-                await supabase
-                    .from('daily_activity_questions')
-                    .update({ daha_once_soruldu: true })
-                    .in('id', questions.map(q => q.id));
             }
         } catch (error) {
             console.error('Error saving results:', error);
         }
-    }, [questions, userAnswers, score, timeLeft]);
+    }, [questions, userAnswers, score, timeLeft, streak, lastPlayedDate]);
 
     // Cevap kontrolü
     const checkAnswer = useCallback(() => {
@@ -198,7 +247,8 @@ export default function DailyActivity() {
         const correctAnswer = currentQuestion.cevap.toLowerCase().trim();
         const isCorrect = userAnswer === correctAnswer;
 
-        const earnedPoints = Math.max(5, currentQuestion.puan - (hintsUsed * 5));
+        // Yeni puan hesaplama (minimum 50 puan)
+        const earnedPoints = Math.max(50, currentQuestion.puan - (hintsUsed * 50));
 
         const newAnswers = [...userAnswers];
         newAnswers[currentQuestionIndex] = {
@@ -214,15 +264,22 @@ export default function DailyActivity() {
         if (isCorrect) {
             setScore(prev => prev + earnedPoints);
 
+            // Animasyon ve sonraki soruya geçiş
+            const inputContainer = document.getElementById('input-container');
+            if (inputContainer) {
+                inputContainer.classList.add('animate-green-flash');
+                setTimeout(() => {
+                    inputContainer.classList.remove('animate-green-flash');
+                }, 500);
+            }
+
             // Son soru mu kontrol et
             const isLastQuestion = currentQuestionIndex === questions.length - 1;
-
             if (isLastQuestion) {
                 finishGame();
             }
         } else {
-            // Yanlış cevap: inputu temizle ve animasyon ekle
-            setInputValues(['']);
+            setInputValues(Array(currentQuestion.cevap.length).fill(''));
             const inputContainer = document.getElementById('input-container');
             if (inputContainer) {
                 inputContainer.classList.add('animate-shake');
@@ -233,9 +290,9 @@ export default function DailyActivity() {
         }
     }, [currentQuestionIndex, questions, inputValues, hintsUsed, userAnswers, finishGame]);
 
-    // İpucu kullan
+    // İpucu kullan (artık sadece 2 ipucu var)
     const useHint = useCallback(() => {
-        if (hintsUsed >= 3 || !questions[currentQuestionIndex]) return;
+        if (hintsUsed >= 2 || !questions[currentQuestionIndex]) return;
 
         const newHintsUsed = hintsUsed + 1;
         setHintsUsed(newHintsUsed);
@@ -246,11 +303,7 @@ export default function DailyActivity() {
         let newLockedInputs = [...lockedInputs];
 
         switch (newHintsUsed) {
-            case 1: // Harf sayısını göster
-                newValues = Array(currentQuestion.cevap.length).fill('');
-                newLockedInputs = Array(currentQuestion.cevap.length).fill(false);
-                break;
-            case 2: // Baş ipucu
+            case 1: // Baş ipucu
                 const startHint = currentQuestion.ipucu_bas;
                 for (let i = 0; i < startHint.length && i < newValues.length; i++) {
                     newValues[i] = startHint[i];
@@ -264,7 +317,7 @@ export default function DailyActivity() {
                     }
                 }, 0);
                 break;
-            case 3: // Son ipucu
+            case 2: // Son ipucu
                 const endHint = currentQuestion.ipucu_son;
                 for (let i = 0; i < endHint.length; i++) {
                     const pos = newValues.length - endHint.length + i;
@@ -304,29 +357,19 @@ export default function DailyActivity() {
             if (value && value.length === 1) {
                 newValues[index] = value.toLowerCase();
 
-                // Yeni input ekle (eğer son kutuysa ve max uzunluk aşılmadıysa)
-                if (index === newValues.length - 1 && newValues.length < 30) {
-                    newValues.push('');
-                    setLockedInputs(prev => [...prev, false]);
-                    // Yeni eklenen inputa odaklan
+                // Eğer bu kutucukta zaten bir harf varsa, sonraki kutucuğa geç
+                if (newValues[index] && index < newValues.length - 1 && !lockedInputs[index + 1]) {
                     setTimeout(() => {
                         inputRefs.current[index + 1]?.focus();
                     }, 0);
-                } else if (index < newValues.length - 1) {
-                    // Sonraki inputa otomatik geç (eğer kilitli değilse)
-                    const nextIndex = index + 1;
-                    if (nextIndex < newValues.length && !lockedInputs[nextIndex]) {
-                        setTimeout(() => {
-                            inputRefs.current[nextIndex]?.focus();
-                        }, 0);
-                    }
                 }
             }
             // Backspace ile harf silme
-            else if (value === '' && index >= 0) {
+            else if (value === '') {
                 newValues[index] = '';
+
                 // Eğer kutu boşsa ve ilk kutu değilse, önceki kutuya odaklan (eğer kilitli değilse)
-                if (index > 0 && newValues[index] === '' && !lockedInputs[index - 1]) {
+                if (index > 0 && !lockedInputs[index - 1]) {
                     setTimeout(() => {
                         inputRefs.current[index - 1]?.focus();
                     }, 0);
@@ -344,6 +387,7 @@ export default function DailyActivity() {
         } else if (e.key === 'Backspace' && inputValues[index] === '' && index > 0 && !lockedInputs[index - 1]) {
             // Önceki inputa odaklan (eğer kilitli değilse)
             inputRefs.current[index - 1]?.focus();
+            e.preventDefault();
         } else if (e.key === 'ArrowLeft' && index > 0 && !lockedInputs[index - 1]) {
             // Sol ok tuşu ile önceki inputa geç (eğer kilitli değilse)
             inputRefs.current[index - 1]?.focus();
@@ -352,23 +396,30 @@ export default function DailyActivity() {
             // Sağ ok tuşu ile sonraki inputa geç (eğer kilitli değilse)
             inputRefs.current[index + 1]?.focus();
             e.preventDefault();
+        } else if (/^[a-zA-ZğüşıöçĞÜŞİÖÇ]$/.test(e.key) && inputValues[index] && index < inputValues.length - 1 && !lockedInputs[index + 1]) {
+            // Harf girildiğinde ve kutucuk doluysa, sonraki kutucuğa geç (eğer kilitli değilse)
+            setTimeout(() => {
+                inputRefs.current[index + 1]?.focus();
+            }, 0);
         }
     }, [checkAnswer, inputValues, lockedInputs]);
 
-    // Soru değiştiğinde inputları sıfırla
+    // Soru değiştiğinde inputları sıfırla ve harf sayısını göster
     useEffect(() => {
         if (gameStatus !== 'playing') return;
 
+        const currentQuestion = questions[currentQuestionIndex];
+        if (!currentQuestion) return;
+
         const currentAnswer = userAnswers[currentQuestionIndex];
-        const answerLength = currentAnswer?.answer?.length || 1;
+        const answerLength = currentQuestion.cevap.length;
 
-        setInputValues(currentAnswer?.answer || ['']);
-        setHintsUsed(currentAnswer?.hintsUsed || 0);
+        // Yeni soruya geçildiğinde harf sayısını göster
+        setInputValues(Array(answerLength).fill(''));
         setLockedInputs(Array(answerLength).fill(false));
-
-        // Eğer ipucu kullanılmışsa veya cevap verilmişse kutucukları göster
-        setShowHints((currentAnswer?.hintsUsed || 0) > 0 || (currentAnswer?.isCorrect || false));
-    }, [currentQuestionIndex, gameStatus, userAnswers]);
+        setHintsUsed(currentAnswer?.hintsUsed || 0);
+        setShowHints(true);
+    }, [currentQuestionIndex, gameStatus, questions, userAnswers]);
 
     // Inputlara otomatik odaklanma
     useEffect(() => {
@@ -461,7 +512,7 @@ export default function DailyActivity() {
                 <div className="w-full max-w-md p-6 sm:p-8 rounded-3xl shadow-2xl bg-black/15">
                     <h1 className="text-2xl font-bold text-center mb-4">Günlük Etkinlik</h1>
                     <p className="mb-6">
-                        Her gün 6 farklı zorlukta soruyla karşılaşacak, 100 saniyede en yüksek puanı toplamaya çalışacaksınız.
+                        Her gün 6 farklı zorlukta soruyla karşılaşacak, 150 saniyede en yüksek puanı toplamaya çalışacaksınız.
                     </p>
 
                     <div className="space-y-3 mb-6">
@@ -469,7 +520,7 @@ export default function DailyActivity() {
                             <div className="w-8 h-8 flex items-center justify-center bg-blue-100 dark:bg-blue-700 rounded-full mr-3">
                                 <HelpCircle className="w-8 h-4 text-blue-600 dark:text-blue-300" />
                             </div>
-                            <p>3 ipucu hakkınız var, her ipucu puanı 5 azaltır. Soru değeri minimum 5 puana düşebilir.</p>
+                            <p>2 ipucu hakkınız var, her ipucu puanı 50 azaltır. Soru değeri minimum 50 puana düşebilir.</p>
                         </div>
                         <div className="flex items-center">
                             <div className="w-8 h-8 flex items-center justify-center bg-green-100 dark:bg-green-700 rounded-full mr-3">
@@ -512,7 +563,7 @@ export default function DailyActivity() {
                 </div>
 
                 <div className="flex justify-center space-x-2 mb-6">
-                    {questions.map((_, index) => {
+                    {Array(10).fill(0).map((_, index) => {
                         const isCurrent = index === currentQuestionIndex;
                         const isAnswered = userAnswers[index]?.isCorrect;
 
@@ -546,7 +597,7 @@ export default function DailyActivity() {
 
                 <div className="flex items-center justify-between mb-4">
                     <div className="flex space-x-2">
-                        {Array(3).fill(0).map((_, i) => (
+                        {Array(2).fill(0).map((_, i) => ( // Artık sadece 2 ipucu
                             <div
                                 key={i}
                                 className={`w-6 h-6 rounded-full flex items-center justify-center ${i < hintsUsed ? 'bg-blue-600' : 'rounded-3xl shadow-2xl bg-black/30'
@@ -558,8 +609,8 @@ export default function DailyActivity() {
                     </div>
                     <button
                         onClick={useHint}
-                        disabled={hintsUsed >= 3 || isAnswered}
-                        className={`px-3 py-3 rounded-lg text-sm font-medium ${hintsUsed >= 3 || isAnswered
+                        disabled={hintsUsed >= 2 || isAnswered}
+                        className={`px-3 py-3 rounded-lg text-sm font-medium ${hintsUsed >= 2 || isAnswered
                             ? 'transition dark:bg-green-700 dark:text-green-200 cursor-not-allowed'
                             : 'transition dark:bg-green-700 dark:text-green-200 dark:hover:bg-green-800'
                             }`}
@@ -569,60 +620,38 @@ export default function DailyActivity() {
                 </div>
 
                 <div id="input-container" className="mb-6">
-                    <div className="flex flex-wrap gap-2 mb-4">
-                        {(!showHints && !isAnswered) ? (
-                            // İpucu kullanılmamışken ve cevap verilmemişken tek input
-                            <div className="w-full">
-                                <input
-                                    ref={el => { inputRefs.current[0] = el; }}
-                                    type="text"
-                                    value={inputValues[0] || ''}
-                                    onChange={(e) => {
-                                        const value = e.target.value;
-                                        setInputValues([value.toLowerCase()]);
-                                    }}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') checkAnswer();
-                                    }}
-                                    disabled={isAnswered}
-                                    className="w-full p-3 border-2 border-gray-300 dark:border-gray-600 rounded-md font-medium text-lg bg-transparent focus:outline-none"
-                                    placeholder="Cevabınızı yazın..."
-                                />
-                            </div>
-                        ) : (
-                            // İpucu kullanıldıktan sonra veya cevap verildikten sonra harf kutucukları
-                            inputValues.map((value, index) => (
-                                <div
-                                    key={index}
-                                    className={`flex items-center justify-center w-10 h-12 border-2 rounded-md ${isAnswered
-                                        ? value.toLowerCase() === currentQuestion.cevap[index]?.toLowerCase()
-                                            ? 'border-green-500 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
-                                            : 'border-red-500 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
-                                        : lockedInputs[index]
-                                            ? 'border-blue-500 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
-                                            : 'border-gray-300 dark:border-gray-600'
-                                        }`}
-                                >
-                                    <input
-                                        ref={el => { inputRefs.current[index] = el; }}
-                                        type="text"
-                                        value={value}
-                                        onChange={(e) => handleInputChange(index, e.target.value, e.target)}
-                                        onKeyDown={(e) => handleKeyDown(e, index)}
-                                        maxLength={1}
-                                        disabled={isAnswered || lockedInputs[index]}
-                                        className={`w-full h-full text-center font-medium text-lg bg-transparent focus:outline-none uppercase ${lockedInputs[index] ? 'text-blue-600 dark:text-blue-300' : ''}`}
-                                    />
-                                </div>
-                            ))
-                        )}
-                    </div>
-
-                    {showHints && hintsUsed === 1 && !isAnswered && (
+                    {showHints && hintsUsed === 0 && !isAnswered && (
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
                             Cevap {currentQuestion.cevap.length} harfli.
                         </p>
                     )}
+
+                    <div className="flex flex-wrap gap-2 mb-4">
+                        {inputValues.map((value, index) => (
+                            <div
+                                key={index}
+                                className={`flex items-center justify-center w-10 h-12 border-2 rounded-md ${isAnswered
+                                    ? value.toLowerCase() === currentQuestion.cevap[index]?.toLowerCase()
+                                        ? 'border-red-500 bg-red-50 dark:border-red-800 dark:bg-red-900/20'
+                                        : 'border-green-500 bg-green-50 dark:border-green-800 dark:bg-green-900/20'
+                                    : lockedInputs[index]
+                                        ? 'border-blue-500 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20'
+                                        : 'border-gray-300 dark:border-gray-600'
+                                    }`}
+                            >
+                                <input
+                                    ref={el => { inputRefs.current[index] = el; }}
+                                    type="text"
+                                    value={value}
+                                    onChange={(e) => handleInputChange(index, e.target.value, e.target)}
+                                    onKeyDown={(e) => handleKeyDown(e, index)}
+                                    maxLength={1}
+                                    disabled={isAnswered || lockedInputs[index]}
+                                    className={`w-full h-full text-center font-medium text-lg bg-transparent focus:outline-none uppercase ${lockedInputs[index] ? 'text-blue-600 dark:text-blue-300' : ''}`}
+                                />
+                            </div>
+                        ))}
+                    </div>
                 </div>
 
                 <button

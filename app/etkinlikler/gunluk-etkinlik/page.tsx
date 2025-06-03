@@ -31,7 +31,6 @@ const supabase = createBrowserClient(
 export default function DailyActivity() {
     const router = useRouter();
     const [loading, setLoading] = useState(true);
-    const [alreadyCompleted, setAlreadyCompleted] = useState(false);
     const [questions, setQuestions] = useState<DailyQuestion[]>([]);
     const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
     const [userAnswers, setUserAnswers] = useState<(UserAnswer | null)[]>(Array(10).fill(null));

@@ -186,41 +186,9 @@ export default function DailyActivity() {
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
                 const today = new Date().toISOString().split('T')[0];
-                const isStreakContinued = lastPlayedDate === today;
 
-                // Streak'i güncelle
-                const newStreak = isStreakContinued ? streak : streak + 1;
-                setStreak(newStreak);
-
-                // Profili güncelle
-                await supabase
-                    .from('profiles')
-                    .update({
-                        daily_streak: newStreak,
-                        last_activity_date: today
-                    })
-                    .eq('id', user.id);
-
-                // Soruları "soruldu" olarak işaretle
-                const questionIds = questions.map(q => q.id);
-                const { error: updateError } = await supabase
-                    .from('daily_activity_questions')
-                    .update({ daha_once_soruldu: true })
-                    .in('id', questionIds);
-
-                if (updateError) {
-                    console.error('Error updating questions:', updateError);
-                    // Hata durumunda tek tek güncelleme yap
-                    for (const question of questions) {
-                        await supabase
-                            .from('daily_activity_questions')
-                            .update({ daha_once_soruldu: true })
-                            .eq('id', question.id);
-                    }
-                }
-
-                // Oyun kaydını oluştur
-                await supabase
+                // Oyun kaydını oluştur (trigger'lar otomatik olarak streak ve puanları güncelleyecek)
+                const { error } = await supabase
                     .from('daily_activity_records')
                     .upsert({
                         user_id: user.id,
@@ -231,11 +199,24 @@ export default function DailyActivity() {
                         time_spent: 150 - timeLeft,
                         completed: true,
                     });
+
+                if (error) throw error;
+
+                // Kullanıcının güncel profil bilgilerini çek
+                const { data: profile } = await supabase
+                    .from('profiles')
+                    .select('daily_streak, daily_score')
+                    .eq('id', user.id)
+                    .single();
+
+                if (profile) {
+                    setStreak(profile.daily_streak || 0);
+                }
             }
         } catch (error) {
             console.error('Error saving results:', error);
         }
-    }, [questions, userAnswers, score, timeLeft, streak, lastPlayedDate]);
+    }, [questions, userAnswers, score, timeLeft]);
 
     // Cevap kontrolü
     const checkAnswer = useCallback(() => {

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabaseClient'
-import { Medal, UserCircle2 } from 'lucide-react'
+import { Medal, UserCircle2, Crown } from 'lucide-react'
 import { motion } from 'framer-motion'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -13,17 +13,44 @@ type Kullanici = {
     avatar: string
     total_score: number
     weekly_score: number
+    biography?: string
+}
+
+type GecenHaftaBirinci = {
+    id: string
+    username: string
+    avatar: string
+    last_week_score: number
+    biography?: string
 }
 
 export default function LiderlikSayfasi() {
     const [kullanicilar, setKullanicilar] = useState<Kullanici[]>([])
+    const [gecenHaftaBirinci, setGecenHaftaBirinci] = useState<GecenHaftaBirinci | null>(null)
     const [kendiId, setKendiId] = useState<string | null>(null)
-    const [haftalikMod, setHaftalikMod] = useState(true) // Varsayılan olarak haftalık mod açık
+    const [haftalikMod, setHaftalikMod] = useState(true)
 
     useEffect(() => {
         const kullaniciBilgisi = async () => {
             const { data: sessionData } = await supabase.auth.getSession()
             setKendiId(sessionData.session?.user?.id || null)
+        }
+
+        const gecenHaftaBirincisiniGetir = async () => {
+            const { data, error } = await supabase
+                .from('profiles')
+                .select('id, username, avatar, last_week_score, biography')
+                .order('last_week_score', { ascending: false })
+                .limit(1)
+
+            if (error) {
+                console.error('Geçen haftanın birincisi alınamadı:', error)
+                return
+            }
+
+            if (data && data.length > 0) {
+                setGecenHaftaBirinci(data[0])
+            }
         }
 
         const verileriGetir = async () => {
@@ -42,6 +69,7 @@ export default function LiderlikSayfasi() {
         }
 
         kullaniciBilgisi()
+        gecenHaftaBirincisiniGetir()
         verileriGetir()
     }, [haftalikMod])
 
@@ -57,6 +85,41 @@ export default function LiderlikSayfasi() {
             >
                 🏆 Liderlik Tablosu
             </motion.h1>
+
+            {/* Geçen Haftanın Birincisi */}
+            {gecenHaftaBirinci && (
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.5 }}
+                    className="max-w-4xl mx-auto mb-12 bg-gradient-to-r from-purple-500/20 to-pink-500/20 p-6 rounded-3xl shadow-lg border border-white/10"
+                >
+                    <div className="flex flex-col items-center text-center">
+                        <div className="relative mb-4">
+                            <Crown className="absolute -top-5 -right-5 w-8 h-8 text-yellow-400 rotate-12" />
+                            <div className="relative w-20 h-20">
+                                <Image
+                                    src={gecenHaftaBirinci.avatar || '/default-avatar.png'}
+                                    alt={gecenHaftaBirinci.username}
+                                    fill
+                                    className="rounded-full object-cover border-4 border-yellow-400"
+                                />
+                            </div>
+                        </div>
+                        <h2 className="text-2xl font-bold mb-1 flex items-center gap-2">
+                            Geçen Haftanın Birincisi: {gecenHaftaBirinci.username}
+                        </h2>
+                        <p className="text-lg mb-4">
+                            Puan: <span className="font-bold">{gecenHaftaBirinci.last_week_score}</span>
+                        </p>
+                        {gecenHaftaBirinci.biography && (
+                            <p className="text-theme-subtext max-w-2xl italic">
+                                "{gecenHaftaBirinci.biography}"
+                            </p>
+                        )}
+                    </div>
+                </motion.div>
+            )}
 
             <div className="flex justify-center mb-8">
                 <div className="flex items-center gap-4 bg-theme-card p-2 rounded-full">
